@@ -1,0 +1,116 @@
+%% ══════════════════════════════════════════════════════════════════════
+%% YouTrack Permissions — End-to-End Lifecycle Architecture
+%% ══════════════════════════════════════════════════════════════════════
+%% مخطط دورة حياة الصلاحيات الشاملة من التعريف وحتى الإلغاء والتدقيق
+%% ══════════════════════════════════════════════════════════════════════
+
+graph TB
+
+    %% ─────────────────────────────────────────────
+    %% Styling Definitions
+    %% ─────────────────────────────────────────────
+    classDef phaseDef fill:#FEF3C7,stroke:#D97706,stroke-width:2px,color:#92400E;
+    classDef phaseComp fill:#EDE9FE,stroke:#7C3AED,stroke-width:2px,color:#5B21B6;
+    classDef phaseAssign fill:#E0F2FE,stroke:#0284C7,stroke-width:2px,color:#075985;
+    classDef phaseEval fill:#DCFCE7,stroke:#16A34A,stroke-width:2px,color:#166534;
+    classDef phaseRevoke fill:#FEE2E2,stroke:#DC2626,stroke-width:2px,color:#991B1B;
+    classDef phaseAudit fill:#F3F4F6,stroke:#4B5563,stroke-width:2px,color:#1F2937;
+    classDef nodeDetail fill:#FFFFFF,stroke:#9CA3AF,stroke-width:1px,color:#111827;
+
+    %% ═══════════════════════════════════════════════════════
+    %% المرحلة 1: التعريف والنمذجة والتسجيل
+    %% ═══════════════════════════════════════════════════════
+    subgraph PHASE1 ["المرحلة 1: التعريف والنمذجة الهيكلية (Definition & Modeling)"]
+        P1_PERM["🔐 Permission Model<br/>نمذجة الصلاحية بالأبعاد الأربعة<br/>ScopeLevel × ModuleType × EntityType × OperationType"]:::phaseDef
+        P1_GRAPH["🕸️ Dependency Relations<br/>شبكة التبعيات المسبقة<br/>ImpliedPerms (سلفية) · DependentPerms (خلفية)"]:::nodeDetail
+        P1_CATALOG["📚 Default Catalog<br/>كتالوج الصلاحيات الافتراضي<br/>BuildDefaultCatalog() · 57 صلاحية موحدة"]:::nodeDetail
+
+        P1_PERM --> P1_GRAPH
+        P1_GRAPH --> P1_CATALOG
+    end
+
+    %% ═══════════════════════════════════════════════════════
+    %% المرحلة 2: تجميع الأدوار وحل التبعيات
+    %% ═══════════════════════════════════════════════════════
+    subgraph PHASE2 ["المرحلة 2: تجميع الأدوار وحل التبعيات (Role Composition)"]
+        P2_ROLE["🎭 Role Definition<br/>حاوية الدور<br/>Admin · Manager · Developer · Reporter"]:::phaseComp
+        P2_BFS["⚡ ResolveImplied(IDs)<br/>حساب الإغلاق المتعدي عبر BFS<br/>إضافة الصلاحيات المتضمنة تلقائياً"]:::nodeDetail
+        P2_BUNDLE["📦 Composite Permission Bundle<br/>حزمة صلاحيات الدور المكتملة والمستقرة"]:::nodeDetail
+
+        P2_ROLE --> P2_BFS
+        P2_BFS --> P2_BUNDLE
+    end
+
+    P1_CATALOG -->|"تزويد الكتالوج"| P2_BFS
+
+    %% ═══════════════════════════════════════════════════════
+    %% المرحلة 3: التعيين وعزل النطاق
+    %% ═══════════════════════════════════════════════════════
+    subgraph PHASE3 ["المرحلة 3: التعيين وعزل النطاق (Assignment & Scope Isolation)"]
+        P3_ASSIGN["👤 Role Assignment<br/>ربط الدور بمستخدم أو مجموعة"]:::phaseAssign
+        P3_ENGINE["🎯 ValidatePermissionsForScope(...)<br/>محرك عزل وفلترة الصلاحيات حسب النطاق"]:::nodeDetail
+        
+        P3_GLOBAL["🌐 Global Target<br/>تسري كافة الصلاحيات"]:::nodeDetail
+        P3_ORG["🏢 Organization Target<br/>تُخمد الصلاحيات العامة وتعمل المؤسسة والمشاريع"]:::nodeDetail
+        P3_PROJ["📁 Project Target<br/>تُخمد العامة والمؤسسية وتعمل صلاحيات المشروع حصراً"]:::nodeDetail
+
+        P3_EFFECTIVE["🛡️ Effective Scoped Permissions<br/>مصفوفة الصلاحيات الفعالة للنطاق المحدد"]:::nodeDetail
+
+        P3_ASSIGN --> P3_ENGINE
+        P3_ENGINE --> P3_GLOBAL
+        P3_ENGINE --> P3_ORG
+        P3_ENGINE --> P3_PROJ
+        P3_GLOBAL --> P3_EFFECTIVE
+        P3_ORG --> P3_EFFECTIVE
+        P3_PROJ --> P3_EFFECTIVE
+    end
+
+    P2_BUNDLE -->|"إسناد الدور للنطاق"| P3_ASSIGN
+
+    %% ═══════════════════════════════════════════════════════
+    %% المرحلة 4: التقييم الديناميكي وقت التشغيل
+    %% ═══════════════════════════════════════════════════════
+    subgraph PHASE4 ["المرحلة 4: التقييم الأمني وقت التشغيل (Runtime Evaluation)"]
+        P4_REQ["🚀 Operation Request<br/>طلب تنفيذ عملية على كيان محدد"]:::phaseEval
+        P4_EXP["1️⃣ HasPermission(...)<br/>فحص الصلاحيات الصريحة الممنوحة"]:::nodeDetail
+        P4_INH["2️⃣ CheckInherentAccess(...)<br/>فحص الحقوق المتأصلة للمنشئ/المؤلف"]:::nodeDetail
+        
+        P4_PERMIT["✅ PERMIT<br/>السماح بالوصول وتنفيذ الإجراء"]:::phaseEval
+        P4_DENY["❌ DENY (403)<br/>حظر العملية ورفض الوصول"]:::phaseRevoke
+
+        P4_REQ --> P4_EXP
+        P4_EXP -->|"ممنوحة صراحة"| P4_PERMIT
+        P4_EXP -->|"غير ممنوحة"| P4_INH
+        P4_INH -->|"شروط الملكية متحققة"| P4_PERMIT
+        P4_INH -->|"شروط الملكية غير مستوفاة"| P4_DENY
+    end
+
+    P3_EFFECTIVE -->|"تغذية الصلاحيات الفعالة"| P4_EXP
+
+    %% ═══════════════════════════════════════════════════════
+    %% المرحلة 5: التعديل والإلغاء المتتالي
+    %% ═══════════════════════════════════════════════════════
+    subgraph PHASE5 ["المرحلة 5: التعديل والإلغاء المتتالي (Modification & Revocation)"]
+        P5_REVOKE["✂️ Revocation Trigger<br/>سحب صلاحية من دور أو تعديل التعيين"]:::phaseRevoke
+        P5_CASCADE["⛓️ ResolveRevocation(...)<br/>خوارزمية الإلغاء المتتالي للتبعيات المعتمدة<br/>Cascading Pruning via DependentPerms"]:::nodeDetail
+        P5_INVALIDATE["🔄 Cache Invalidation<br/>إبطال الذاكرة المخبأة للجلسات فوراً"]:::nodeDetail
+
+        P5_REVOKE --> P5_CASCADE
+        P5_CASCADE --> P5_INVALIDATE
+    end
+
+    P5_INVALIDATE -.->|"تحديث فوري للصلاحيات"| P3_EFFECTIVE
+
+    %% ═══════════════════════════════════════════════════════
+    %% المرحلة 6: الحوكمة والتدقيق والامتثال
+    %% ═══════════════════════════════════════════════════════
+    subgraph PHASE6 ["المرحلة 6: التدقيق والحوكمة والامتثال (Auditing & Governance)"]
+        P6_LOG["📝 Audit Trail Logging<br/>تسجيل أحداث المنح والسحب والمحاولات الأمنية"]:::phaseAudit
+        P6_LEAST["⚖️ Least Privilege Verification<br/>مراجعة الامتثال ومكافحة تضخم الامتيازات"]:::nodeDetail
+
+        P6_LOG --> P6_LEAST
+    end
+
+    P4_PERMIT -.->|"تسجيل أمني"| P6_LOG
+    P4_DENY -.->|"تسجيل محاولات الرفض"| P6_LOG
+    P5_REVOKE -.->|"تسجيل عمليات الإلغاء"| P6_LOG

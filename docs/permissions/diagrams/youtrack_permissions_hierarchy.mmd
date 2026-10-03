@@ -1,0 +1,149 @@
+%% =========================================================================
+%% YouTrack Permissions Tree (Pure Vertical / Top-to-Bottom Layout)
+%% مخطط شجري رأسي نقي لهرمية صلاحيات YouTrack بدون حاويات (No Subgraphs)
+%% =========================================================================
+%% مفتاح القراءة:
+%% السهم العادي (-->): تسلسل هرمي رأسي من أعلى لأسفل
+%% السهم العريض الموصوف (==>|يتضمن|): علاقة التضمين الحتمية (إعطاء الصلاحية يمنح التابعة تلقائياً)
+%% وفقدان الصلاحية التابعة يسحب الصلاحيات المتصلة بها تلقائياً (Cascading Revocation)
+%% =========================================================================
+
+flowchart TD
+
+    %% ---------------------------------------------------------------------
+    %% الأنماط والتنسيقات
+    %% ---------------------------------------------------------------------
+    classDef rootNode fill:#0F172A,stroke:#0284C7,stroke-width:3px,color:#FFFFFF,font-weight:bold;
+    classDef sectionHeader fill:#1E293B,stroke:#475569,stroke-width:2px,color:#38BDF8,font-weight:bold;
+    classDef globalScope fill:#FEF3C7,stroke:#D97706,stroke-width:2px,color:#92400E;
+    classDef orgScope fill:#EDE9FE,stroke:#7C3AED,stroke-width:2px,color:#5B21B6;
+    classDef projScope fill:#E0F2FE,stroke:#0284C7,stroke-width:2px,color:#075985;
+    classDef corePrereq fill:#DCFCE7,stroke:#16A34A,stroke-width:3px,color:#14532D,font-weight:bold;
+    classDef standalone fill:#F8FAFC,stroke:#94A3B8,stroke-width:1px,color:#334155;
+
+    %% ---------------------------------------------------------------------
+    %% العقدة الجذرية العليا
+    %% ---------------------------------------------------------------------
+    ROOT["🔑 YouTrack Permissions Architecture<br/>هيكلية صلاحيات يوتراك الرأسية"]:::rootNode
+
+    %% ---------------------------------------------------------------------
+    %% المستوى 1: النظام والتطبيقات (System & Apps)
+    %% ---------------------------------------------------------------------
+    ROOT --> SEC_SYS["⚙️ 1. صلاحيات النظام والتطبيقات (System & Apps)"]:::sectionHeader
+    
+    SEC_SYS --> ADMIN_WRITE["Low-level Admin Write<br/><code>ADMIN_UPDATE_APP</code>"]:::globalScope
+    ADMIN_WRITE ==>|يتضمن| ADMIN_READ["Low-level Admin Read<br/><code>ADMIN_READ_APP</code>"]:::globalScope
+
+    SEC_SYS --> APP_WRITE["Update App Content<br/><code>UPDATE_APP_CONTENT</code>"]:::projScope
+    APP_WRITE ==>|يتضمن| APP_READ["Read App Content<br/><code>READ_APP_CONTENT</code>"]:::projScope
+
+    %% ---------------------------------------------------------------------
+    %% المستوى 2: المستخدمين والمؤسسات (Users & Organizations)
+    %% ---------------------------------------------------------------------
+    ADMIN_READ --> SEC_USER["👤 2. صلاحيات المستخدمين والمؤسسات (Users & Organizations)"]:::sectionHeader
+    APP_READ --> SEC_USER
+
+    SEC_USER --> CREATE_USER["Create User<br/><code>CREATE_USER</code>"]:::globalScope
+    SEC_USER --> UPDATE_USER["Update User<br/><code>UPDATE_USER</code>"]:::globalScope
+    SEC_USER --> DELETE_USER["Delete User<br/><code>DELETE_USER</code>"]:::globalScope
+
+    UPDATE_USER ==>|يتضمن| UPDATE_PROFILE["Update Self<br/><code>UPDATE_PROFILE</code>"]:::globalScope
+    UPDATE_USER ==>|يتضمن| READ_USER["Read User Details<br/><code>READ_USER</code>"]:::globalScope
+    DELETE_USER ==>|يتضمن| READ_USER
+    READ_USER ==>|يتضمن| READ_USER_BASIC["Read User Basic<br/><code>READ_USER_BASIC</code>"]:::corePrereq
+
+    SEC_USER --> CREATE_ORG["Create Organization<br/><code>CREATE_ORGANIZATION</code>"]:::globalScope
+    SEC_USER --> UPDATE_ORG["Update Organization<br/><code>UPDATE_ORGANIZATION</code>"]:::orgScope
+    SEC_USER --> DELETE_ORG["Delete Organization<br/><code>DELETE_ORGANIZATION</code>"]:::orgScope
+
+    CREATE_ORG ==>|يتضمن| READ_ORG["Read Organization<br/><code>READ_ORGANIZATION</code>"]:::corePrereq
+    UPDATE_ORG ==>|يتضمن| READ_ORG
+    DELETE_ORG ==>|يتضمن| READ_ORG
+
+    %% ---------------------------------------------------------------------
+    %% المستوى 3: المشاريع والتذاكر (Projects & Issues)
+    %% ---------------------------------------------------------------------
+    READ_USER_BASIC --> SEC_PROJ["📁 3. صلاحيات المشاريع والتذاكر (Projects & Issues)"]:::sectionHeader
+    READ_ORG --> SEC_PROJ
+
+    SEC_PROJ --> CREATE_PROJ["Create Project<br/><code>CREATE_PROJECT</code>"]:::globalScope
+    SEC_PROJ --> UPDATE_PROJ["Update Project<br/><code>UPDATE_PROJECT</code>"]:::projScope
+    SEC_PROJ --> DELETE_PROJ["Delete Project<br/><code>DELETE_PROJECT</code>"]:::projScope
+
+    UPDATE_PROJ ==>|يتضمن| READ_PROJ["Read Project Full<br/><code>READ_PROJECT</code>"]:::projScope
+    DELETE_PROJ ==>|يتضمن| READ_PROJ
+    READ_PROJ ==>|يتضمن| READ_PROJ_BASIC["Read Project Basic<br/><code>READ_PROJECT_BASIC</code><br/><i>(المرتكز الجذري لكافة عمليات المشروع)</i>"]:::corePrereq
+
+    %% تفريعات التذاكر المتصلة مباشرة بالمرتكز الجذري
+    READ_PROJ_BASIC --> CREATE_ISSUE["Create Issue<br/><code>CREATE_ISSUE</code>"]:::projScope
+    READ_PROJ_BASIC --> READ_ISSUE["Read Issue<br/><code>READ_ISSUE</code>"]:::projScope
+    READ_PROJ_BASIC --> VIEW_VOTERS["View Voters<br/><code>VIEW_VOTERS</code>"]:::projScope
+    READ_PROJ_BASIC --> VIEW_WATCHERS["View Watchers<br/><code>VIEW_WATCHERS</code>"]:::projScope
+
+    READ_PROJ_BASIC --> PRIV_READ_ISSUE["Read Issue Private Fields<br/><code>PRIVATE_READ_ISSUE</code>"]:::projScope
+    PRIV_READ_ISSUE --> PRIV_UPDATE_ISSUE["Update Issue Private Fields<br/><code>PRIVATE_UPDATE_ISSUE</code>"]:::projScope
+    PRIV_READ_ISSUE --> OVERRIDE_VIS["Override Visibility Restrictions<br/><code>READ_HIDDEN_STUFF</code>"]:::projScope
+    PRIV_UPDATE_ISSUE ==>|يتضمن| UPDATE_ISSUE["Update Issue<br/><code>UPDATE_ISSUE</code>"]:::projScope
+
+    %% عمليات التذاكر المستقلة والمرفقات
+    SEC_PROJ --> ISSUE_OPS["عمليات التذاكر والمرفقات<br/>Issue Operations & Attachments"]:::standalone
+    ISSUE_OPS --> DELETE_ISSUE["Delete Issue<br/><code>DELETE_ISSUE</code>"]:::standalone
+    ISSUE_OPS --> LINK_ISSUE["Link Issues<br/><code>LINK_ISSUE</code>"]:::standalone
+    ISSUE_OPS --> UPDATE_WATCHERS["Update Watchers<br/><code>UPDATE_WATCHERS</code>"]:::standalone
+    ISSUE_OPS --> APPLY_SILENTLY["Apply Commands Silently<br/><code>APPLY_COMMANDS_SILENTLY</code>"]:::standalone
+    ISSUE_OPS --> ATTACH_ADD["Add Attachment<br/><code>CREATE_ATTACHMENT_ISSUE</code>"]:::standalone
+    ISSUE_OPS --> ATTACH_UPDATE["Update Attachment<br/><code>UPDATE_ATTACHMENT_ISSUE</code>"]:::standalone
+    ISSUE_OPS --> ATTACH_DELETE["Delete Attachment<br/><code>DELETE_ATTACHMENT_ISSUE</code>"]:::standalone
+
+    %% ---------------------------------------------------------------------
+    %% المستوى 4: التعليقات وبنود العمل (Comments & Work Items)
+    %% ---------------------------------------------------------------------
+    UPDATE_ISSUE --> SEC_ACT["⏱️ 4. التعليقات وبنود العمل (Comments & Work Items)"]:::sectionHeader
+    ISSUE_OPS --> SEC_ACT
+
+    SEC_ACT --> CREATE_COMM["Create Issue Comment<br/><code>CREATE_COMMENT</code>"]:::standalone
+    SEC_ACT --> UPDATE_COMM["Update Issue Comment<br/><code>UPDATE_COMMENT</code>"]:::standalone
+    SEC_ACT --> DELETE_COMM["Delete Issue Comment<br/><code>DELETE_COMMENT</code>"]:::standalone
+    
+    SEC_ACT --> UPDATE_NOT_OWN_COMM["Update Not Own Comment<br/><code>UPDATE_NOT_OWN_COMMENT</code>"]:::projScope
+    SEC_ACT --> DELETE_NOT_OWN_COMM["Delete Not Own Comment<br/><code>DELETE_NOT_OWN_COMMENT</code>"]:::projScope
+    UPDATE_NOT_OWN_COMM ==>|يتضمن| READ_COMM["Read Issue Comment<br/><code>READ_COMMENT</code>"]:::corePrereq
+    DELETE_NOT_OWN_COMM ==>|يتضمن| READ_COMM
+
+    SEC_ACT --> CREATE_NOT_OWN_WORK["Create Not Own Work Item<br/><code>CREATE_NOT_OWN_WORK_ITEM</code>"]:::projScope
+    CREATE_NOT_OWN_WORK ==>|يتضمن| CREATE_WORK["Create Work Item<br/><code>CREATE_WORK_ITEM</code>"]:::projScope
+
+    SEC_ACT --> UPDATE_NOT_OWN_WORK["Update Not Own Work Item<br/><code>UPDATE_NOT_OWN_WORK_ITEM</code>"]:::projScope
+    UPDATE_NOT_OWN_WORK ==>|يتضمن| UPDATE_WORK["Update Work Item<br/><code>UPDATE_WORK_ITEM</code>"]:::projScope
+    UPDATE_NOT_OWN_WORK ==>|يتضمن| READ_WORK["Read Work Item<br/><code>READ_WORK_ITEM</code>"]:::projScope
+
+    %% ---------------------------------------------------------------------
+    %% المستوى 5: مقالات قاعدة المعرفة (Knowledge Base)
+    %% ---------------------------------------------------------------------
+    READ_COMM --> SEC_KB["📚 5. قاعدة المعرفة والمقالات (Knowledge Base)"]:::sectionHeader
+    READ_WORK --> SEC_KB
+
+    SEC_KB --> CREATE_ART["Create Article<br/><code>CREATE_ARTICLE</code>"]:::projScope
+    SEC_KB --> UPDATE_ART["Update Article<br/><code>UPDATE_ARTICLE</code>"]:::projScope
+    SEC_KB --> DELETE_ART["Delete Article<br/><code>DELETE_ARTICLE</code>"]:::projScope
+    CREATE_ART ==>|يتضمن| READ_ART["Read Article<br/><code>READ_ARTICLE</code>"]:::corePrereq
+    UPDATE_ART ==>|يتضمن| READ_ART
+    DELETE_ART ==>|يتضمن| READ_ART
+
+    SEC_KB --> CREATE_ART_COMM["Create Article Comment<br/><code>CREATE_ARTICLE_COMMENT</code>"]:::projScope
+    SEC_KB --> UPDATE_ART_COMM["Update Article Comment<br/><code>UPDATE_ARTICLE_COMMENT</code>"]:::projScope
+    SEC_KB --> DELETE_ART_COMM["Delete Article Comment<br/><code>DELETE_ARTICLE_COMMENT</code>"]:::projScope
+    CREATE_ART_COMM ==>|يتضمن| READ_ART_COMM["Read Article Comment<br/><code>READ_ARTICLE_COMMENT</code>"]:::corePrereq
+    UPDATE_ART_COMM ==>|يتضمن| READ_ART_COMM
+    DELETE_ART_COMM ==>|يتضمن| READ_ART_COMM
+
+    %% ---------------------------------------------------------------------
+    %% المستوى 6: الوسوم وعمليات البحث (Watch Folders)
+    %% ---------------------------------------------------------------------
+    READ_ART --> SEC_TAG["🏷️ 6. الوسوم وعمليات البحث المحفوظة (Watch Folders)"]:::sectionHeader
+    READ_ART_COMM --> SEC_TAG
+
+    SEC_TAG --> CREATE_TAG["Create Tag / Saved Search<br/><code>CREATE_WATCH_FOLDER</code>"]:::standalone
+    SEC_TAG --> UPDATE_TAG["Edit Tag / Saved Search<br/><code>UPDATE_WATCH_FOLDER</code>"]:::standalone
+    SEC_TAG --> DELETE_TAG["Delete Tag / Saved Search<br/><code>DELETE_WATCH_FOLDER</code>"]:::standalone
+    SEC_TAG --> SHARE_TAG["Share Custom View<br/><code>SHARE_WATCH_FOLDER</code>"]:::standalone

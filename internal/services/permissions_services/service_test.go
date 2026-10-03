@@ -1,0 +1,206 @@
+package perms
+
+import (
+	"testing"
+)
+
+func TestBuildDefaultCatalog(t *testing.T) {
+	svc := NewService()
+	perms := svc.GetAllPermissions()
+
+	if len(perms) < 40 {
+		t.Fatalf("expected at least 40 permissions, got %d", len(perms))
+	}
+
+	for _, p := range perms {
+		if p.ID == "" {
+			t.Errorf("permission with empty ID found")
+		}
+		if p.DisplayName == "" {
+			t.Errorf("permission %s has empty DisplayName", p.ID)
+		}
+		if p.Description == "" {
+			t.Errorf("permission %s has empty Description", p.ID)
+		}
+		if p.Module == "" {
+			t.Errorf("permission %s has empty Module", p.ID)
+		}
+		if p.Entity == "" {
+			t.Errorf("permission %s has empty Entity", p.ID)
+		}
+		if p.Scope == "" {
+			t.Errorf("permission %s has empty Scope", p.ID)
+		}
+		if p.Operation == "" {
+			t.Errorf("permission %s has empty Operation", p.ID)
+		}
+	}
+}
+
+func TestResolveImplied(t *testing.T) {
+	svc := NewService()
+
+	tests := []struct {
+		name     string
+		input    []string
+		expected []string
+	}{
+		{
+			name:     "Create Issue implies Read Project Basic",
+			input:    []string{PermCreateIssue},
+			expected: []string{PermCreateIssue, PermReadProjectBasic}, // CREATE_ISSUE < READ_PROJECT_BASIC
+		},
+		{
+			name:  "Update User implies Update Profile, Read User Details, and Read User Basic",
+			input: []string{PermUpdateUser},
+			expected: []string{
+				PermReadUserDetails, // READ_USER
+				PermReadUserBasic,   // READ_USER_BASIC
+				PermUpdateSelf,      // UPDATE_PROFILE
+				PermUpdateUser,      // UPDATE_USER
+			},
+		},
+		{
+			name:  "Update Issue Private Fields implies Read Issue Private Fields, Update Issue, and Read Project Basic",
+			input: []string{PermUpdateIssuePrivateFields},
+			expected: []string{
+				PermReadIssuePrivateFields,   // PRIVATE_READ_ISSUE
+				PermUpdateIssuePrivateFields, // PRIVATE_UPDATE_ISSUE
+				PermReadProjectBasic,         // READ_PROJECT_BASIC
+				PermUpdateIssue,              // UPDATE_ISSUE
+			},
+		},
+		{
+			name:  "Update Project implies Read Project Full and Read Project Basic",
+			input: []string{PermUpdateProject},
+			expected: []string{
+				PermReadProjectFull,  // READ_PROJECT
+				PermReadProjectBasic, // READ_PROJECT_BASIC
+				PermUpdateProject,    // UPDATE_PROJECT
+			},
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			res := svc.ResolveImplied(tc.input)
+			if len(res) != len(tc.expected) {
+				t.Fatalf("expected %v, got %v", tc.expected, res)
+			}
+			for i, exp := range tc.expected {
+				if res[i] != exp {
+					t.Errorf("at index %d: expected %s, got %s", i, exp, res[i])
+				}
+			}
+		})
+	}
+}
+
+func TestResolveRevocation(t *testing.T) {
+	svc := NewService()
+
+	// Initial set includes UpdateProject (which implies ReadProjectFull and ReadProjectBasic)
+	// and CreateIssue (which implies ReadProjectBasic)
+	active := svc.ResolveImplied([]string{PermUpdateProject, PermCreateIssue})
+
+	// Revoke ReadProjectBasic
+	remaining := svc.ResolveRevocation(active, PermReadProjectBasic)
+
+	// Since UpdateProject, ReadProjectFull, and CreateIssue all depend directly or transitively
+	// on ReadProjectBasic, all of them must be dropped!
+	for _, p := range remaining {
+		if p == PermUpdateProject || p == PermReadProjectFull || p == PermReadProjectBasic || p == PermCreateIssue {
+			t.Errorf("revocation failed: permission %s is still present in remaining list", p)
+		}
+	}
+
+	if len(remaining) != 0 {
+		t.Errorf("expected 0 remaining permissions, got %v", remaining)
+	}
+}
+
+func TestValidatePermissionsForScope(t *testing.T) {
+	svc := NewService()
+
+	mix := []string{
+		PermCreateUser,         // Global
+		PermCreateOrganization, // Global
+		PermUpdateOrganization, // Organization
+		PermReadOrganization,   // Organization
+		PermReadIssue,          // Project
+		PermCreateIssue,        // Project
+	}
+
+	// 1. Global Scope: everything applies
+	globalValid := svc.ValidatePermissionsForScope(mix, ScopeGlobal)
+	if len(globalValid) != len(mix) {
+		t.Errorf("expected all %d permissions valid at Global scope, got %d", len(mix), len(globalValid))
+	}
+
+	// 2. Organization Scope: Global permissions must not apply
+	orgValid := svc.ValidatePermissionsForScope(mix, ScopeOrganization)
+	for _, p := range orgValid {
+		if p == PermCreateUser || p == PermCreateOrganization {
+			t.Errorf("global permission %s should not apply at Organization scope", p)
+		}
+	}
+	if len(orgValid) != 4 {
+		t.Errorf("expected 4 permissions at Organization scope, got %d (%v)", len(orgValid), orgValid)
+	}
+
+	// 3. Project Scope: Global and Organization permissions must not apply
+	projValid := svc.ValidatePermissionsForScope(mix, ScopeProject)
+	for _, p := range projValid {
+		if p != PermReadIssue && p != PermCreateIssue {
+			t.Errorf("non-project permission %s should not apply at Project scope", p)
+		}
+	}
+	if len(projValid) != 2 {
+		t.Errorf("expected 2 permissions at Project scope, got %d (%v)", len(projValid), projValid)
+	}
+}
+
+func TestInherentPermissions(t *testing.T) {
+	svc := NewService()
+
+	mockPerms := map[string]bool{
+		PermCreateIssue:          true,
+		PermAddAttachment:        true,
+		PermCreateIssueComment:   true,
+		PermCreateArticleComment: true,
+	}
+	hasPerm := func(id string) bool {
+		return mockPerms[id]
+	}
+
+	// Reporter can view and update public fields of their own issues
+	if !svc.CheckInherentAccess(InherentReadOwnIssuePublicFields, true, hasPerm) {
+		t.Errorf("reporter should inherently have read access to own issue public fields")
+	}
+	if !svc.CheckInherentAccess(InherentUpdateOwnIssuePublicFields, true, hasPerm) {
+		t.Errorf("reporter should inherently have update access to own issue public fields")
+	}
+
+	// Non-reporter cannot inherently access
+	if svc.CheckInherentAccess(InherentUpdateOwnIssuePublicFields, false, hasPerm) {
+		t.Errorf("non-reporter should NOT inherently have update access to issue public fields")
+	}
+
+	// Attachment uploader can delete own attachment
+	if !svc.CheckInherentAccess(InherentDeleteOwnAttachment, true, hasPerm) {
+		t.Errorf("uploader should inherently be able to delete their own attachment")
+	}
+
+	// Comment creator can read own issue comment
+	if !svc.CheckInherentAccess(InherentReadOwnIssueComment, true, hasPerm) {
+		t.Errorf("comment creator should inherently be able to read own comment")
+	}
+
+	// Article comment creator can read, update, and delete own article comments
+	if !svc.CheckInherentAccess(InherentReadOwnArticleComment, true, hasPerm) {
+		t.Errorf("article comment creator should inherently be able to read own comment")
+	}
+	if !svc.CheckInherentAccess(InherentUpdateOwnArticleComment, true, hasPerm) {
+		t.Errorf("article comment creator should inherently be able to update own comment")
+	}
+}

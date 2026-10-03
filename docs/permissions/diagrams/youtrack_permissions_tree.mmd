@@ -1,0 +1,183 @@
+%% =========================================================================
+%% YouTrack Permissions Dependency & Implication Tree
+%% مخطط شجري لعلاقات التضمين (Implied) والاعتماديات (Dependent) في YouTrack
+%% =========================================================================
+%% مفتاح قراءة المخطط:
+%% السهم المتصل: A ==>|يتضمن / Implies| B (إعطاء A يمنح B تلقائياً)
+%% السهم المنقط: B -.->|تعتمد عليه / Dependent| A (سحب B يسحب A تلقائياً بالتسلسل)
+%% =========================================================================
+
+graph TD
+
+    %% ---------------------------------------------------------------------
+    %% الألوان والتنسيقات
+    %% ---------------------------------------------------------------------
+    classDef globalScope fill:#FEF3C7,stroke:#D97706,stroke-width:2px,color:#92400E;
+    classDef orgScope fill:#EDE9FE,stroke:#7C3AED,stroke-width:2px,color:#5B21B6;
+    classDef projScope fill:#E0F2FE,stroke:#0284C7,stroke-width:2px,color:#075985;
+    classDef rootAnchor fill:#DCFCE7,stroke:#16A34A,stroke-width:3px,color:#14532D;
+    classDef standalone fill:#F3F4F6,stroke:#9CA3AF,stroke-width:1px,color:#374151;
+
+    %% ---------------------------------------------------------------------
+    %% 1. قسم النظام والتطبيقات (System & Apps)
+    %% ---------------------------------------------------------------------
+    subgraph SUB_SYS ["⚙️ النظام والتطبيقات (System & Apps)"]
+        ADMIN_UPDATE_APP["Low-level Admin Write<br/><code>ADMIN_UPDATE_APP</code>"]:::globalScope
+        ADMIN_READ_APP["Low-level Admin Read<br/><code>ADMIN_READ_APP</code>"]:::globalScope
+        
+        UPDATE_APP_CONTENT["Update App Content<br/><code>UPDATE_APP_CONTENT</code>"]:::projScope
+        READ_APP_CONTENT["Read App Content<br/><code>READ_APP_CONTENT</code>"]:::projScope
+
+        ADMIN_UPDATE_APP ==>|يتضمن| ADMIN_READ_APP
+        UPDATE_APP_CONTENT ==>|يتضمن| READ_APP_CONTENT
+    end
+
+    %% ---------------------------------------------------------------------
+    %% 2. قسم إدارة المستخدمين (Users Hierarchy)
+    %% ---------------------------------------------------------------------
+    subgraph SUB_USER ["👤 إدارة المستخدمين (Users - Global Scope)"]
+        CREATE_USER["Create User<br/><code>CREATE_USER</code>"]:::globalScope
+        UPDATE_USER["Update User<br/><code>UPDATE_USER</code>"]:::globalScope
+        DELETE_USER["Delete User<br/><code>DELETE_USER</code>"]:::globalScope
+        UPDATE_PROFILE["Update Self<br/><code>UPDATE_PROFILE</code>"]:::globalScope
+        READ_USER["Read User Details<br/><code>READ_USER</code>"]:::globalScope
+        READ_USER_BASIC["Read User Basic<br/><code>READ_USER_BASIC</code>"]:::rootAnchor
+
+        UPDATE_USER ==>|يتضمن| UPDATE_PROFILE
+        UPDATE_USER ==>|يتضمن| READ_USER
+        DELETE_USER ==>|يتضمن| READ_USER
+        READ_USER ==>|يتضمن| READ_USER_BASIC
+    end
+
+    %% ---------------------------------------------------------------------
+    %% 3. قسم المؤسسات (Organizations)
+    %% ---------------------------------------------------------------------
+    subgraph SUB_ORG ["🏢 المؤسسات (Organizations)"]
+        CREATE_ORGANIZATION["Create Organization<br/><code>CREATE_ORGANIZATION</code>"]:::globalScope
+        UPDATE_ORGANIZATION["Update Organization<br/><code>UPDATE_ORGANIZATION</code>"]:::orgScope
+        DELETE_ORGANIZATION["Delete Organization<br/><code>DELETE_ORGANIZATION</code>"]:::orgScope
+        READ_ORGANIZATION["Read Organization<br/><code>READ_ORGANIZATION</code>"]:::rootAnchor
+
+        CREATE_ORGANIZATION ==>|يتضمن| READ_ORGANIZATION
+        UPDATE_ORGANIZATION ==>|يتضمن| READ_ORGANIZATION
+        DELETE_ORGANIZATION ==>|يتضمن| READ_ORGANIZATION
+    end
+
+    %% ---------------------------------------------------------------------
+    %% 4. شجرة المشاريع والتذاكر (Projects & Issues Core Tree)
+    %% ---------------------------------------------------------------------
+    subgraph SUB_PROJ_CORE ["📁 أساس المشاريع والتذاكر (Project Core Anchor)"]
+        CREATE_PROJECT["Create Project<br/><code>CREATE_PROJECT</code>"]:::globalScope
+        UPDATE_PROJECT["Update Project<br/><code>UPDATE_PROJECT</code>"]:::projScope
+        DELETE_PROJECT["Delete Project<br/><code>DELETE_PROJECT</code>"]:::projScope
+        READ_PROJECT["Read Project Full<br/><code>READ_PROJECT</code>"]:::projScope
+        READ_PROJECT_BASIC["Read Project Basic<br/><code>READ_PROJECT_BASIC</code><br/><i>(المرتكز الأساسي لجميع صلاحيات المشروع)</i>"]:::rootAnchor
+
+        UPDATE_PROJECT ==>|يتضمن| READ_PROJECT
+        DELETE_PROJECT ==>|يتضمن| READ_PROJECT
+        READ_PROJECT ==>|يتضمن| READ_PROJECT_BASIC
+    end
+
+    %% ---------------------------------------------------------------------
+    %% 5. صلاحيات التذاكر (Issues Branch)
+    %% ---------------------------------------------------------------------
+    subgraph SUB_ISSUE ["🎫 التذاكر والمهام (Issues)"]
+        CREATE_ISSUE["Create Issue<br/><code>CREATE_ISSUE</code>"]:::projScope
+        READ_ISSUE["Read Issue<br/><code>READ_ISSUE</code>"]:::projScope
+        DELETE_ISSUE["Delete Issue<br/><code>DELETE_ISSUE</code>"]:::standalone
+        UPDATE_ISSUE["Update Issue<br/><code>UPDATE_ISSUE</code>"]:::projScope
+        
+        PRIVATE_UPDATE_ISSUE["Update Issue Private Fields<br/><code>PRIVATE_UPDATE_ISSUE</code>"]:::projScope
+        PRIVATE_READ_ISSUE["Read Issue Private Fields<br/><code>PRIVATE_READ_ISSUE</code>"]:::projScope
+        READ_HIDDEN_STUFF["Override Visibility Restrictions<br/><code>READ_HIDDEN_STUFF</code>"]:::projScope
+        
+        VIEW_VOTERS["View Voters<br/><code>VIEW_VOTERS</code>"]:::projScope
+        VIEW_WATCHERS["View Watchers<br/><code>VIEW_WATCHERS</code>"]:::projScope
+        UPDATE_WATCHERS["Update Watchers<br/><code>UPDATE_WATCHERS</code>"]:::standalone
+        LINK_ISSUE["Link Issues<br/><code>LINK_ISSUE</code>"]:::standalone
+        APPLY_COMMANDS_SILENTLY["Apply Commands Silently<br/><code>APPLY_COMMANDS_SILENTLY</code>"]:::standalone
+
+        %% علاقات التضمين مع المرتكز الأساسي للمشروع
+        CREATE_ISSUE ==>|يتضمن| READ_PROJECT_BASIC
+        READ_ISSUE ==>|يتضمن| READ_PROJECT_BASIC
+        PRIVATE_READ_ISSUE ==>|يتضمن| READ_PROJECT_BASIC
+        VIEW_VOTERS ==>|يتضمن| READ_PROJECT_BASIC
+        VIEW_WATCHERS ==>|يتضمن| READ_PROJECT_BASIC
+
+        %% التضمين الداخلي في التذاكر
+        READ_HIDDEN_STUFF ==>|يتضمن| PRIVATE_READ_ISSUE
+        PRIVATE_UPDATE_ISSUE ==>|يتضمن| PRIVATE_READ_ISSUE
+        PRIVATE_UPDATE_ISSUE ==>|يتضمن| UPDATE_ISSUE
+    end
+
+    %% ---------------------------------------------------------------------
+    %% 6. مرفقات التذاكر (Issue Attachments)
+    %% ---------------------------------------------------------------------
+    subgraph SUB_ATTACH ["📎 المرفقات (Issue Attachments)"]
+        CREATE_ATTACHMENT_ISSUE["Add Attachment<br/><code>CREATE_ATTACHMENT_ISSUE</code>"]:::standalone
+        UPDATE_ATTACHMENT_ISSUE["Update Attachment<br/><code>UPDATE_ATTACHMENT_ISSUE</code>"]:::standalone
+        DELETE_ATTACHMENT_ISSUE["Delete Attachment<br/><code>DELETE_ATTACHMENT_ISSUE</code>"]:::standalone
+    end
+
+    %% ---------------------------------------------------------------------
+    %% 7. تعليقات التذاكر (Issue Comments)
+    %% ---------------------------------------------------------------------
+    subgraph SUB_COMM ["💬 تعليقات التذاكر (Issue Comments)"]
+        CREATE_COMMENT["Create Issue Comment<br/><code>CREATE_COMMENT</code>"]:::standalone
+        READ_COMMENT["Read Issue Comment<br/><code>READ_COMMENT</code>"]:::rootAnchor
+        UPDATE_COMMENT["Update Issue Comment<br/><code>UPDATE_COMMENT</code>"]:::standalone
+        DELETE_COMMENT["Delete Issue Comment<br/><code>DELETE_COMMENT</code>"]:::standalone
+        UPDATE_NOT_OWN_COMMENT["Update Not Own Comment<br/><code>UPDATE_NOT_OWN_COMMENT</code>"]:::projScope
+        DELETE_NOT_OWN_COMMENT["Delete Not Own & Permanent<br/><code>DELETE_NOT_OWN_COMMENT</code>"]:::projScope
+
+        UPDATE_NOT_OWN_COMMENT ==>|يتضمن| READ_COMMENT
+        DELETE_NOT_OWN_COMMENT ==>|يتضمن| READ_COMMENT
+    end
+
+    %% ---------------------------------------------------------------------
+    %% 8. بنود وسجلات تتبع الوقت (Work Items)
+    %% ---------------------------------------------------------------------
+    subgraph SUB_WORK ["⏱️ تتبع الوقت وبنود العمل (Work Items)"]
+        CREATE_NOT_OWN_WORK_ITEM["Create Not Own Work Item<br/><code>CREATE_NOT_OWN_WORK_ITEM</code>"]:::projScope
+        CREATE_WORK_ITEM["Create Work Item<br/><code>CREATE_WORK_ITEM</code>"]:::projScope
+        READ_WORK_ITEM["Read Work Item<br/><code>READ_WORK_ITEM</code>"]:::projScope
+        UPDATE_WORK_ITEM["Update Work Item<br/><code>UPDATE_WORK_ITEM</code>"]:::projScope
+        UPDATE_NOT_OWN_WORK_ITEM["Update Not Own Work Item<br/><code>UPDATE_NOT_OWN_WORK_ITEM</code>"]:::projScope
+
+        CREATE_NOT_OWN_WORK_ITEM ==>|يتضمن| CREATE_WORK_ITEM
+        UPDATE_NOT_OWN_WORK_ITEM ==>|يتضمن| READ_WORK_ITEM
+        UPDATE_NOT_OWN_WORK_ITEM ==>|يتضمن| UPDATE_WORK_ITEM
+    end
+
+    %% ---------------------------------------------------------------------
+    %% 9. المقالات وتعليقات قاعدة المعرفة (Articles & Article Comments)
+    %% ---------------------------------------------------------------------
+    subgraph SUB_ARTICLE ["📚 المقالات وقاعدة المعرفة (Articles & Comments)"]
+        CREATE_ARTICLE["Create Article<br/><code>CREATE_ARTICLE</code>"]:::projScope
+        UPDATE_ARTICLE["Update Article<br/><code>UPDATE_ARTICLE</code>"]:::projScope
+        DELETE_ARTICLE["Delete Article<br/><code>DELETE_ARTICLE</code>"]:::projScope
+        READ_ARTICLE["Read Article<br/><code>READ_ARTICLE</code>"]:::rootAnchor
+
+        CREATE_ARTICLE_COMMENT["Create Article Comment<br/><code>CREATE_ARTICLE_COMMENT</code>"]:::projScope
+        UPDATE_ARTICLE_COMMENT["Update Article Comment<br/><code>UPDATE_ARTICLE_COMMENT</code>"]:::projScope
+        DELETE_ARTICLE_COMMENT["Delete Article Comment<br/><code>DELETE_ARTICLE_COMMENT</code>"]:::projScope
+        READ_ARTICLE_COMMENT["Read Article Comment<br/><code>READ_ARTICLE_COMMENT</code>"]:::rootAnchor
+
+        CREATE_ARTICLE ==>|يتضمن| READ_ARTICLE
+        UPDATE_ARTICLE ==>|يتضمن| READ_ARTICLE
+        DELETE_ARTICLE ==>|يتضمن| READ_ARTICLE
+
+        CREATE_ARTICLE_COMMENT ==>|يتضمن| READ_ARTICLE_COMMENT
+        UPDATE_ARTICLE_COMMENT ==>|يتضمن| READ_ARTICLE_COMMENT
+        DELETE_ARTICLE_COMMENT ==>|يتضمن| READ_ARTICLE_COMMENT
+    end
+
+    %% ---------------------------------------------------------------------
+    %% 10. الوسوم وعمليات البحث (Watch Folders & Saved Searches)
+    %% ---------------------------------------------------------------------
+    subgraph SUB_WATCH ["🏷️ الوسوم وعمليات البحث (Watch Folders / Tags)"]
+        CREATE_WATCH_FOLDER["Create Tag / Saved Search<br/><code>CREATE_WATCH_FOLDER</code>"]:::standalone
+        UPDATE_WATCH_FOLDER["Edit Tag / Saved Search<br/><code>UPDATE_WATCH_FOLDER</code>"]:::standalone
+        DELETE_WATCH_FOLDER["Delete Tag / Saved Search<br/><code>DELETE_WATCH_FOLDER</code>"]:::standalone
+        SHARE_WATCH_FOLDER["Share Custom View<br/><code>SHARE_WATCH_FOLDER</code>"]:::standalone
+    end

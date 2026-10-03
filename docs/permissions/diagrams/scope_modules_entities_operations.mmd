@@ -1,0 +1,167 @@
+%% ══════════════════════════════════════════════════════════════════════════════════
+%% YouTrack Scoped Permissions Matrix: ScopeLevel -> ModuleType -> EntityType -> OperationType
+%% ══════════════════════════════════════════════════════════════════════════════════
+%% هذا المخطط يربط كل مستوى نطاق (Scope) بالوحدات الوظيفية (Modules)
+%% والموارد المستهدفة (Entities) والعمليات المسموح بها برمجياً (Operations)
+%% وفقاً لكتالوج YouTrack (catalog.go) وقواعد التحقق (service.go)
+%% ══════════════════════════════════════════════════════════════════════════════════
+
+graph LR
+
+    %% ─────────────────────────────────────────────────────────────
+    %% Level 1: Scope Levels (أفق النطاق)
+    %% ─────────────────────────────────────────────────────────────
+    ROOT["🏛️ YouTrack Authorization Engine<br/>نظام الصلاحيات متعدد المستويات"]
+
+    SCOPE_G["🌐 ScopeGlobal<br/>النطاق الشامل للخادم<br/>(10 صلاحيات)"]
+    SCOPE_O["🏢 ScopeOrganization<br/>نطاق المؤسسة<br/>(3 صلاحيات)"]
+    SCOPE_P["📁 ScopeProject<br/>نطاق المشروع<br/>(44 صلاحية)"]
+
+    ROOT --> SCOPE_G
+    ROOT --> SCOPE_O
+    ROOT --> SCOPE_P
+
+    %% ═════════════════════════════════════════════════════════════
+    %% 1. GLOBAL SCOPE BRANCH
+    %% ═════════════════════════════════════════════════════════════
+    subgraph SG_GLOBAL["🌐 النطاق العام — ScopeGlobal (System-Wide)"]
+        %% Modules
+        G_MOD_SYS["⚙️ ModuleSystem<br/>إدارة النظام"]
+        G_MOD_USER["⚙️ ModuleUser<br/>إدارة المستخدمين"]
+        G_MOD_ORG["⚙️ ModuleOrganization<br/>إنشاء المؤسسات"]
+        G_MOD_PROJ["⚙️ ModuleProject<br/>إنشاء المشاريع"]
+
+        %% Entities
+        G_ENT_SYS["🎯 EntitySystem<br/>النظام العام"]
+        G_ENT_USER["🎯 EntityUser<br/>سجلات المستخدمين"]
+        G_ENT_ORG["🎯 EntityOrganization<br/>كيان المؤسسة"]
+        G_ENT_PROJ["🎯 EntityProject<br/>كيان المشروع"]
+
+        %% Operations
+        G_OPS_SYS["⚡ Operations:<br/>• READ (Low-level Admin Read)<br/>• ADMIN (Low-level Admin Write)"]
+        G_OPS_USER["⚡ Operations:<br/>• CREATE (Create User)<br/>• READ (Read Basic & Details)<br/>• UPDATE (Update User & Profile)<br/>• DELETE (Delete User)"]
+        G_OPS_ORG["⚡ Operations:<br/>• CREATE (Create Organization)"]
+        G_OPS_PROJ["⚡ Operations:<br/>• CREATE (Create Project)"]
+
+        G_MOD_SYS --> G_ENT_SYS --> G_OPS_SYS
+        G_MOD_USER --> G_ENT_USER --> G_OPS_USER
+        G_MOD_ORG --> G_ENT_ORG --> G_OPS_ORG
+        G_MOD_PROJ --> G_ENT_PROJ --> G_OPS_PROJ
+    end
+
+    SCOPE_G --> G_MOD_SYS
+    SCOPE_G --> G_MOD_USER
+    SCOPE_G --> G_MOD_ORG
+    SCOPE_G --> G_MOD_PROJ
+
+    %% ═════════════════════════════════════════════════════════════
+    %% 2. ORGANIZATION SCOPE BRANCH
+    %% ═════════════════════════════════════════════════════════════
+    subgraph SG_ORG["🏢 نطاق المؤسسة — ScopeOrganization (Tenant-Level)"]
+        %% Modules
+        O_MOD_ORG["⚙️ ModuleOrganization<br/>إدارة المؤسسة القائمة"]
+
+        %% Entities
+        O_ENT_ORG["🎯 EntityOrganization<br/>المؤسسة المعينة"]
+
+        %% Operations
+        O_OPS_ORG["⚡ Operations:<br/>• READ (Read Organization)<br/>• UPDATE (Update Organization)<br/>• DELETE (Delete Organization)"]
+
+        O_MOD_ORG --> O_ENT_ORG --> O_OPS_ORG
+    end
+
+    SCOPE_O --> O_MOD_ORG
+
+    %% ═════════════════════════════════════════════════════════════
+    %% 3. PROJECT SCOPE BRANCH
+    %% ═════════════════════════════════════════════════════════════
+    subgraph SG_PROJECT["📁 نطاق المشروع — ScopeProject (Project-Level Collaboration)"]
+        %% Modules
+        P_MOD_ISSUE["⚙️ ModuleIssue<br/>إدارة المهام والتذاكر"]
+        P_MOD_ATTACH["⚙️ ModuleIssueAttachment<br/>مرفقات المهام"]
+        P_MOD_ISSCOM["⚙️ ModuleIssueComment<br/>تعليقات المهام"]
+        P_MOD_WORK["⚙️ ModuleIssueWorkItem<br/>تتبع ساعات العمل"]
+        P_MOD_ARTICLE["⚙️ ModuleArticle<br/>المقالات والمعرفة"]
+        P_MOD_ARTCOM["⚙️ ModuleArticleComment<br/>تعليقات المقالات"]
+        P_MOD_PROJ["⚙️ ModuleProject<br/>إدارة المشروع نفسه"]
+        P_MOD_APP["⚙️ ModuleApp<br/>تطبيقات المشروع"]
+        P_MOD_WATCH["⚙️ ModuleWatchFolder<br/>الوسوم والبحث المحفوظ"]
+
+        %% Entities
+        P_ENT_ISSUE["🎯 EntityIssue<br/>التذكرة (Issue)"]
+        P_ENT_ATTACH["🎯 EntityAttachment<br/>المرفق (Attachment)"]
+        P_ENT_ISSCOM["🎯 EntityComment<br/>التعليق (Comment)"]
+        P_ENT_WORK["🎯 EntityWorkItem<br/>سجل العمل (Work Item)"]
+        P_ENT_ARTICLE["🎯 EntityArticle<br/>المقال (Article)"]
+        P_ENT_ARTCOM["🎯 EntityArticleComment<br/>تعليق المقال"]
+        P_ENT_PROJ["🎯 EntityProject<br/>المشروع (Project)"]
+        P_ENT_APP["🎯 EntityApp<br/>تطبيق المشروع (App)"]
+        P_ENT_WATCH["🎯 EntityWatchFolder<br/>مجلد المراقبة"]
+
+        %% Operations
+        P_OPS_ISSUE["⚡ Operations:<br/>• CREATE (Create Issue)<br/>• READ (Read, Private Fields, Visibility)<br/>• UPDATE (Update, Private Fields, Watchers)<br/>• DELETE (Delete Issue)<br/>• LINK (Link Issue)<br/>• SPECIAL (Silent Commands, View Voters)"]
+        P_OPS_ATTACH["⚡ Operations:<br/>• CREATE (Add Attachment)<br/>• UPDATE (Update Attachment)<br/>• DELETE (Delete Attachment)"]
+        P_OPS_ISSCOM["⚡ Operations:<br/>• CREATE (Create Comment)<br/>• READ (Read Comment)<br/>• UPDATE (Update Own & Others)<br/>• DELETE (Delete Own & Permanent)"]
+        P_OPS_WORK["⚡ Operations:<br/>• CREATE (Create Own & Others)<br/>• READ (Read Work Item)<br/>• UPDATE (Update Own & Others)"]
+        P_OPS_ARTICLE["⚡ Operations:<br/>• CREATE (Create Article)<br/>• READ (Read Article)<br/>• UPDATE (Update Article)<br/>• DELETE (Delete Article)"]
+        P_OPS_ARTCOM["⚡ Operations:<br/>• CREATE (Create Article Comment)<br/>• READ (Read Article Comment)<br/>• UPDATE (Update Article Comment)<br/>• DELETE (Delete Article Comment)"]
+        P_OPS_PROJ["⚡ Operations:<br/>• READ (Read Basic & Full)<br/>• UPDATE (Update Project Settings)<br/>• DELETE (Delete / Archive Project)"]
+        P_OPS_APP["⚡ Operations:<br/>• READ (Read App Content)<br/>• UPDATE (Update App Content)"]
+        P_OPS_WATCH["⚡ Operations:<br/>• CREATE (Create Watch Folder)<br/>• UPDATE (Update Watch Folder)<br/>• DELETE (Delete Watch Folder)<br/>• SHARE (Share Tags & Saved Searches)"]
+
+        P_MOD_ISSUE --> P_ENT_ISSUE --> P_OPS_ISSUE
+        P_MOD_ATTACH --> P_ENT_ATTACH --> P_OPS_ATTACH
+        P_MOD_ISSCOM --> P_ENT_ISSCOM --> P_OPS_ISSCOM
+        P_MOD_WORK --> P_ENT_WORK --> P_OPS_WORK
+        P_MOD_ARTICLE --> P_ENT_ARTICLE --> P_OPS_ARTICLE
+        P_MOD_ARTCOM --> P_ENT_ARTCOM --> P_OPS_ARTCOM
+        P_MOD_PROJ --> P_ENT_PROJ --> P_OPS_PROJ
+        P_MOD_APP --> P_ENT_APP --> P_OPS_APP
+        P_MOD_WATCH --> P_ENT_WATCH --> P_OPS_WATCH
+    end
+
+    SCOPE_P --> P_MOD_ISSUE
+    SCOPE_P --> P_MOD_ATTACH
+    SCOPE_P --> P_MOD_ISSCOM
+    SCOPE_P --> P_MOD_WORK
+    SCOPE_P --> P_MOD_ARTICLE
+    SCOPE_P --> P_MOD_ARTCOM
+    SCOPE_P --> P_MOD_PROJ
+    SCOPE_P --> P_MOD_APP
+    SCOPE_P --> P_MOD_WATCH
+
+    %% ═════════════════════════════════════════════════════════════
+    %% Cascading Inheritance Rules (العلاقات الهرمية)
+    %% ═════════════════════════════════════════════════════════════
+    SCOPE_G -.->|"تورث إلى ⬇"| SCOPE_O
+    SCOPE_O -.->|"تورث إلى ⬇"| SCOPE_P
+
+    %% ═════════════════════════════════════════════════════════════
+    %% Node Styling
+    %% ═════════════════════════════════════════════════════════════
+    classDef rootNode fill:#0f172a,stroke:#38bdf8,stroke-width:3px,color:#f8fafc,font-size:15px,font-weight:bold;
+
+    classDef globalScope fill:#78350f,stroke:#f59e0b,stroke-width:2px,color:#fef3c7,font-size:13px;
+    classDef orgScope fill:#4c1d95,stroke:#8b5cf6,stroke-width:2px,color:#ede9fe,font-size:13px;
+    classDef projScope fill:#0c4a6e,stroke:#0284c7,stroke-width:2px,color:#e0f2fe,font-size:13px;
+
+    classDef modNode fill:#1e293b,stroke:#94a3b8,stroke-width:1px,color:#f1f5f9,font-size:11px;
+    classDef entNode fill:#1e1b4b,stroke:#818cf8,stroke-width:1px,color:#e0e7ff,font-size:11px;
+    classDef opsNode fill:#14532d,stroke:#22c55e,stroke-width:1px,color:#f0fdf4,font-size:11px;
+
+    class ROOT rootNode;
+    class SCOPE_G globalScope;
+    class SCOPE_O orgScope;
+    class SCOPE_P projScope;
+
+    class G_MOD_SYS,G_MOD_USER,G_MOD_ORG,G_MOD_PROJ modNode;
+    class O_MOD_ORG modNode;
+    class P_MOD_ISSUE,P_MOD_ATTACH,P_MOD_ISSCOM,P_MOD_WORK,P_MOD_ARTICLE,P_MOD_ARTCOM,P_MOD_PROJ,P_MOD_APP,P_MOD_WATCH modNode;
+
+    class G_ENT_SYS,G_ENT_USER,G_ENT_ORG,G_ENT_PROJ entNode;
+    class O_ENT_ORG entNode;
+    class P_ENT_ISSUE,P_ENT_ATTACH,P_ENT_ISSCOM,P_ENT_WORK,P_ENT_ARTICLE,P_ENT_ARTCOM,P_ENT_PROJ,P_ENT_APP,P_ENT_WATCH entNode;
+
+    class G_OPS_SYS,G_OPS_USER,G_OPS_ORG,G_OPS_PROJ opsNode;
+    class O_OPS_ORG opsNode;
+    class P_OPS_ISSUE,P_OPS_ATTACH,P_OPS_ISSCOM,P_OPS_WORK,P_OPS_ARTICLE,P_OPS_ARTCOM,P_OPS_PROJ,P_OPS_APP,P_OPS_WATCH opsNode;
