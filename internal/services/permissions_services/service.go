@@ -2,7 +2,6 @@ package perms
 
 import (
 	"sort"
-	"sync"
 )
 
 // IPermissionService defines the interface for managing and evaluating permissions.
@@ -21,7 +20,6 @@ type IPermissionService interface {
 
 // Service provides YouTrack permission management, validation, and evaluation.
 type Service struct {
-	mu          sync.RWMutex
 	catalog     map[string]Permission
 	listOrdered []Permission
 }
@@ -49,16 +47,14 @@ func NewService() *Service {
 
 // GetPermission returns a permission definition by its ID.
 func (s *Service) GetPermission(id string) (Permission, bool) {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
+
 	p, ok := s.catalog[id]
 	return p, ok
 }
 
 // GetAllPermissions returns all registered permissions in deterministic order.
 func (s *Service) GetAllPermissions() []Permission {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
+
 	out := make([]Permission, len(s.listOrdered))
 	copy(out, s.listOrdered)
 	return out
@@ -66,8 +62,7 @@ func (s *Service) GetAllPermissions() []Permission {
 
 // GetPermissionsByScope retrieves all permissions belonging to a specific scope level.
 func (s *Service) GetPermissionsByScope(scope ScopeLevel) []Permission {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
+
 	var res []Permission
 	for _, p := range s.listOrdered {
 		if p.Scope == scope {
@@ -79,8 +74,7 @@ func (s *Service) GetPermissionsByScope(scope ScopeLevel) []Permission {
 
 // GetPermissionsByModule retrieves permissions belonging to a functional module.
 func (s *Service) GetPermissionsByModule(module ModuleType) []Permission {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
+
 	var res []Permission
 	for _, p := range s.listOrdered {
 		if p.Module == module {
@@ -92,8 +86,7 @@ func (s *Service) GetPermissionsByModule(module ModuleType) []Permission {
 
 // GetPermissionsByEntity retrieves permissions targeting a specific entity type.
 func (s *Service) GetPermissionsByEntity(entity EntityType) []Permission {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
+
 	var res []Permission
 	for _, p := range s.listOrdered {
 		if p.Entity == entity {
@@ -107,8 +100,6 @@ func (s *Service) GetPermissionsByEntity(entity EntityType) []Permission {
 // As defined by YouTrack: when you add a permission with implied permissions to a role,
 // the implied permissions are added automatically.
 func (s *Service) ResolveImplied(permissionIDs []string) []string {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
 
 	resultMap := make(map[string]struct{})
 	var queue []string
@@ -148,8 +139,6 @@ func (s *Service) ResolveImplied(permissionIDs []string) []string {
 // As defined by YouTrack: when you remove a permission with dependent permissions from a role,
 // the dependent permissions are removed automatically.
 func (s *Service) ResolveRevocation(activePermissionIDs []string, permissionToRemove string) []string {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
 
 	activeSet := make(map[string]struct{}, len(activePermissionIDs))
 	for _, id := range activePermissionIDs {
@@ -191,8 +180,6 @@ func (s *Service) ResolveRevocation(activePermissionIDs []string, permissionToRe
 // - Organization assignment: global permissions no longer propagate and have no effect.
 // - Project assignment: global and organization-level permissions have no effect.
 func (s *Service) ValidatePermissionsForScope(permissionIDs []string, targetScope ScopeLevel) []string {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
 
 	var valid []string
 	for _, id := range permissionIDs {
