@@ -224,5 +224,4 @@ flowchart TD
 - [دليل مرجع صلاحيات يوتراك الأساسي](file:///home/osm/StudioProjects/permissions_youtrack/docs/permissions/youtrack_permissions_reference.md)
 - [دليل مستويات النطاقات (Scope Levels)](file:///home/osm/StudioProjects/permissions_youtrack/docs/permissions/scope_levels_guide.md)
 - [دليل الصلاحيات المتأصلة (Inherent Permissions)](file:///home/osm/StudioProjects/permissions_youtrack/docs/permissions/inherent_permissions_guide.md)
-- [دليل وحدات يوتراك البرمجية (YouTrack Modules)](file:///home/osm/StudioProjects/permissions_youtrack/docs/permissions/youtrack_modules_guide.md)
 - [دليل أنواع الكيانات (Entities Guide)](file:///home/osm/StudioProjects/permissions_youtrack/docs/permissions/youtrack_entities_guide.md)

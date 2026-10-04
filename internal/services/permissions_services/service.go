@@ -9,7 +9,6 @@ type IPermissionService interface {
 	GetPermission(id string) (Permission, bool)
 	GetAllPermissions() []Permission
 	GetPermissionsByScope(scope ScopeLevel) []Permission
-	GetPermissionsByModule(module ModuleType) []Permission
 	GetPermissionsByEntity(entity EntityType) []Permission
 	ResolveImplied(permissionIDs []string) []string
 	ResolveRevocation(activePermissionIDs []string, permissionToRemove string) []string
@@ -33,8 +32,8 @@ func NewService() *Service {
 	}
 
 	sort.Slice(list, func(i, j int) bool {
-		if list[i].Module != list[j].Module {
-			return list[i].Module < list[j].Module
+		if list[i].Entity != list[j].Entity {
+			return list[i].Entity < list[j].Entity
 		}
 		return list[i].ID < list[j].ID
 	})
@@ -72,17 +71,6 @@ func (s *Service) GetPermissionsByScope(scope ScopeLevel) []Permission {
 	return res
 }
 
-// GetPermissionsByModule retrieves permissions belonging to a functional module.
-func (s *Service) GetPermissionsByModule(module ModuleType) []Permission {
-
-	var res []Permission
-	for _, p := range s.listOrdered {
-		if p.Module == module {
-			res = append(res, p)
-		}
-	}
-	return res
-}
 
 // GetPermissionsByEntity retrieves permissions targeting a specific entity type.
 func (s *Service) GetPermissionsByEntity(entity EntityType) []Permission {

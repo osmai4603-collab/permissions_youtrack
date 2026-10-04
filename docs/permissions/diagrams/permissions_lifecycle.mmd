@@ -19,9 +19,8 @@ graph TB
 
     %% ═══════════════════════════════════════════════════════
     %% المرحلة 1: التعريف والنمذجة والتسجيل
-    %% ═══════════════════════════════════════════════════════
     subgraph PHASE1 ["المرحلة 1: التعريف والنمذجة الهيكلية (Definition & Modeling)"]
-        P1_PERM["🔐 Permission Model<br/>نمذجة الصلاحية بالأبعاد الأربعة<br/>ScopeLevel × ModuleType × EntityType × OperationType"]:::phaseDef
+        P1_PERM["🔐 Permission Model<br/>نمذجة الصلاحية بالأبعاد الثلاثية الرسمية<br/>ScopeLevel × EntityType × OperationType"]:::phaseDef
         P1_GRAPH["🕸️ Dependency Relations<br/>شبكة التبعيات المسبقة<br/>ImpliedPerms (سلفية) · DependentPerms (خلفية)"]:::nodeDetail
         P1_CATALOG["📚 Default Catalog<br/>كتالوج الصلاحيات الافتراضي<br/>BuildDefaultCatalog() · 57 صلاحية موحدة"]:::nodeDetail
 

@@ -35,17 +35,16 @@ const (
    يتيح لعدة مؤسسات وشركات العمل على نفس خادم YouTrack المشترك، مع ضمان عدم تداخل صلاحيات المؤسسات أو تسرب بياناتها للمشاريع الأخرى.
 3. **التحكم الدقيق متعدد المستويات (Granular RBAC):**  
    يمكن للمستخدم نفسه أن يكون **مطوراً عادياً** في "مشروع أ"، و**مدير مشروع** في "مشروع ب"، بينما ليس له أي حقوق إدارية على مستوى المؤسسة أو الخادم.
-4. **التكامل مع الأبعاد الرباعية لنظام الصلاحيات:**  
-   يكتمل تعريف الصلاحية في YouTrack من خلال تقاطع أربعة أبعاد:
+4. **التكامل مع الأبعاد الثلاثية لنظام الصلاحيات الرسمي:**  
+   يكتمل تعريف الصلاحية في YouTrack من خلال تقاطع ثلاثة أبعاد رسمية:
    - **أين تسري الصلاحية؟** $\leftarrow$ [`ScopeLevel`](../../internal/services/permissions_services/permission.go#L4)
-   - **في أي نطاق وظيفي؟** $\leftarrow$ [`ModuleType`](../../internal/services/permissions_services/permission.go#L16)
-   - **على أي مورد؟** $\leftarrow$ [`EntityType`](../../internal/services/permissions_services/permission.go#L34)
-   - **ما هو الإجراء المسموح به؟** $\leftarrow$ [`OperationType`](../../internal/services/permissions_services/permission.go#L52)
+   - **على أي مورد؟** $\leftarrow$ [`EntityType`](../../internal/services/permissions_services/permission.go#L16)
+   - **ما هو الإجراء المسموح به؟** $\leftarrow$ [`OperationType`](../../internal/services/permissions_services/permission.go#L34)
 
    > 📌 **المخططات والأدلة التكميلية:**
-   > - مخطط التقاطع المفاهيمي الرباعي: [`permissions_four_dimensions.mmd`](./diagrams/permissions_four_dimensions.mmd).
-   > - مخطط التفصيل الشجري لكل نطاق وما يحتويه من وحدات وموارد وإجراءات: [`scope_modules_entities_operations.mmd`](./diagrams/scope_modules_entities_operations.mmd).
-   > - دليل تفصيل النطاقات والوحدات والموارد والعمليات: [`scopes_modules_entities_operations_guide.md`](./scopes_modules_entities_operations_guide.md).
+   > - مخطط التقاطع المفاهيمي للأبعاد: [`permissions_four_dimensions.mmd`](./diagrams/permissions_four_dimensions.mmd).
+   > - مخطط التفصيل الشجري لكل نطاق وما يحتويه من موارد وإجراءات: [`scope_modules_entities_operations.mmd`](./diagrams/scope_modules_entities_operations.mmd).
+   > - دليل تفصيل النطاقات والموارد والعمليات: [`scopes_modules_entities_operations_guide.md`](./scopes_modules_entities_operations_guide.md).
 
 ---
 

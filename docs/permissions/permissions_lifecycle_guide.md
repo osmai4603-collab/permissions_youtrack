@@ -100,7 +100,7 @@ sequenceDiagram
 
 ### البنية البرمجية لكائن الصلاحية
 
-تُولد الصلاحية كتعريف ثابت داخل المنظومة البرمجية محددة بـ 4 أبعاد معمارية عبر الهيكل البرمجي [`Permission`](../../internal/services/permissions_services/permission.go#L66-L77):
+تُولد الصلاحية كتعريف ثابت داخل المنظومة البرمجية محددة بـ 3 أبعاد معمارية رسمية عبر الهيكل البرمجي [`Permission`](../../internal/services/permissions_services/permission.go#L66-L77):
 
 ```go
 type Permission struct {
@@ -108,7 +108,6 @@ type Permission struct {
  DisplayName    string        `json:"display_name"`
  Description    string        `json:"description"`
  IsGlobal       bool          `json:"is_global"`
- Module         ModuleType    `json:"module"`
  Entity         EntityType    `json:"entity"`
  Scope          ScopeLevel    `json:"scope"`
  Operation      OperationType `json:"operation"`
@@ -117,17 +116,15 @@ type Permission struct {
 }
 ```
 
-### الأبعاد الأربعة المؤطرة لكينونة الصلاحية
+### الأبعاد الثلاثية المؤطرة (المعيار الرسمي) لكينونة الصلاحية
 
 1. **أين تسري الصلاحية؟** [`ScopeLevel`](../../internal/services/permissions_services/permission.go#L4-L13):  
    - `ScopeGlobal`: مستوى الخادم والبنية التحتية.  
    - `ScopeOrganization`: مستوى المؤسسة وفروعها.  
    - `ScopeProject`: مستوى المشروع المستقل.
-2. **في أي مجال وظيفي؟** [`ModuleType`](../../internal/services/permissions_services/permission.go#L16-L31):  
-   - 12 وحدة وظيفية في المنظومة (مثل: `ModuleIssue`, `ModuleArticle`, `ModuleUser`, `ModuleSystem`).
-3. **على أي مورد تستقر الصلاحية؟** [`EntityType`](../../internal/services/permissions_services/permission.go#L34-L49):  
+2. **على أي مورد تستقر الصلاحية؟** [`EntityType`](../../internal/services/permissions_services/permission.go#L34-L49):  
    - 12 نوع كيان مستهدف (مثل: `EntityIssue`, `EntityAttachment`, `EntityComment`, `EntityOrganization`).
-4. **ما هو الفعل المصرح به؟** [`OperationType`](../../internal/services/permissions_services/permission.go#L52-L63):  
+3. **ما هو الفعل المصرح به؟** [`OperationType`](../../internal/services/permissions_services/permission.go#L52-L63):  
    - 8 عمليات تشغيلية: `OpCreate`, `OpRead`, `OpUpdate`, `OpDelete`, `OpLink`, `OpShare`, `OpAdmin`, `OpSpecial`.
 
 ### بناء شبكة الاعتمادات البينية المسبقة (Bi-directional Dependency Graph)
@@ -459,4 +456,4 @@ $$\text{TargetToRemove} = \text{PermReadProjectBasic}$$
 - **دليل وحدات يوتراك الوظيفية:** [`docs/permissions/youtrack_modules_guide.md`](./youtrack_modules_guide.md)
 - **المرجع الشامل لجميع الصلاحيات:** [`docs/permissions/youtrack_permissions_reference.md`](./youtrack_permissions_reference.md)
 - **مخطط أبعاد الصلاحيات الرباعية:** [`docs/permissions/diagrams/permissions_four_dimensions.mmd`](./diagrams/permissions_four_dimensions.mmd)
-- **مخطط هيكلية النطاقات والوحدات والكيانات والعمليات:** [`docs/permissions/diagrams/scope_modules_entities_operations.mmd`](./diagrams/scope_modules_entities_operations.mmd)
+- **مخطط هيكلية النطاقات والكيانات والعمليات:** [`docs/permissions/diagrams/scope_modules_entities_operations.mmd`](./diagrams/scope_modules_entities_operations.mmd)

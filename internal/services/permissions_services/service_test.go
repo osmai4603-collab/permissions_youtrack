@@ -22,9 +22,6 @@ func TestBuildDefaultCatalog(t *testing.T) {
 		if p.Description == "" {
 			t.Errorf("permission %s has empty Description", p.ID)
 		}
-		if p.Module == "" {
-			t.Errorf("permission %s has empty Module", p.ID)
-		}
 		if p.Entity == "" {
 			t.Errorf("permission %s has empty Entity", p.ID)
 		}

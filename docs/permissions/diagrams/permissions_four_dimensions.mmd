@@ -1,7 +1,7 @@
 %% ══════════════════════════════════════════════════════════════════════
-%% YouTrack Permissions — Four Dimensions Architecture
+%% YouTrack Permissions — Three Dimensions Architecture
 %% ══════════════════════════════════════════════════════════════════════
-%% تعريف الصلاحية الكامل = ScopeLevel × ModuleType × EntityType × OperationType
+%% تعريف الصلاحية الكامل الرسمي = ScopeLevel × EntityType × OperationType
 %% ══════════════════════════════════════════════════════════════════════
 
 graph TB
@@ -9,7 +9,7 @@ graph TB
     %% ─────────────────────────────────────────────
     %% Central Permission Node
     %% ─────────────────────────────────────────────
-    PERM["🔐 Permission<br/>تعريف الصلاحية الكامل<br/>━━━━━━━━━━━━━━━━━━<br/>ID · DisplayName · Description<br/>IsGlobal · ImpliedPerms · DependentPerms"]
+    PERM["🔐 Permission<br/>تعريف الصلاحية الكامل (YouTrack Official)<br/>━━━━━━━━━━━━━━━━━━<br/>ID · DisplayName · Description<br/>IsGlobal · ImpliedPerms · DependentPerms"]
 
     %% ═══════════════════════════════════════════════════════
     %% Dimension 1: ScopeLevel — أين تسري الصلاحية؟
@@ -30,56 +30,24 @@ graph TB
     SCOPE_ORG -.->|"يتضمن ⬇"| SCOPE_PROJ
 
     %% ═══════════════════════════════════════════════════════
-    %% Dimension 2: ModuleType — في أي نطاق وظيفي؟
+    %% Dimension 2: EntityType — على أي مورد؟
     %% ═══════════════════════════════════════════════════════
-    MODULE["⚙️ البُعد الثاني<br/>ModuleType<br/>في أي نطاق وظيفي؟"]
+    ENTITY["🎯 البُعد الثاني<br/>EntityType<br/>على أي مورد؟"]
 
-    MOD_SYS["🖥️ SYSTEM<br/>إدارة النظام"]
-    MOD_APP["📱 APP<br/>التطبيقات"]
-    MOD_ARTICLE["📝 ARTICLE<br/>المقالات"]
-    MOD_ARTCOM["💬 ARTICLE_COMMENT<br/>تعليقات المقالات"]
-    MOD_ISSUE["🎫 ISSUE<br/>المهام"]
-    MOD_ATTACH["📎 ISSUE_ATTACHMENT<br/>مرفقات المهام"]
-    MOD_ISSCOM["🗨️ ISSUE_COMMENT<br/>تعليقات المهام"]
-    MOD_WORK["⏱️ ISSUE_WORK_ITEM<br/>عناصر العمل"]
-    MOD_ORG["🏛️ ORGANIZATION<br/>المؤسسات"]
-    MOD_PROJ["📂 PROJECT<br/>المشاريع"]
-    MOD_USER["👤 USER<br/>المستخدمون"]
-    MOD_WATCH["👁️ WATCH_FOLDER<br/>مجلدات المراقبة"]
+    ENT_SYS["🖥️ SYSTEM<br/>النظام والخادم"]
+    ENT_APP["📱 APP<br/>التطبيقات وسير العمل"]
+    ENT_ARTICLE["📝 ARTICLE<br/>مقالات المعرفة"]
+    ENT_ARTCOM["💬 ARTICLE_COMMENT<br/>تعليقات المقالات"]
+    ENT_ISSUE["🎫 ISSUE<br/>المهام والتذاكر"]
+    ENT_ATTACH["📎 ATTACHMENT<br/>المرفقات"]
+    ENT_COMMENT["🗨️ COMMENT<br/>التعليقات"]
+    ENT_WORK["⏱️ WORK_ITEM<br/>عناصر وسجلات العمل"]
+    ENT_ORG["🏛️ ORGANIZATION<br/>المؤسسات"]
+    ENT_PROJ["📂 PROJECT<br/>المشاريع"]
+    ENT_USER["👤 USER<br/>المستخدمون"]
+    ENT_WATCH["👁️ WATCH_FOLDER<br/>مجلدات المراقبة والوسوم"]
 
-    PERM -->|"أي وحدة؟"| MODULE
-    MODULE --> MOD_SYS
-    MODULE --> MOD_APP
-    MODULE --> MOD_ARTICLE
-    MODULE --> MOD_ARTCOM
-    MODULE --> MOD_ISSUE
-    MODULE --> MOD_ATTACH
-    MODULE --> MOD_ISSCOM
-    MODULE --> MOD_WORK
-    MODULE --> MOD_ORG
-    MODULE --> MOD_PROJ
-    MODULE --> MOD_USER
-    MODULE --> MOD_WATCH
-
-    %% ═══════════════════════════════════════════════════════
-    %% Dimension 3: EntityType — على أي مورد؟
-    %% ═══════════════════════════════════════════════════════
-    ENTITY["🎯 البُعد الثالث<br/>EntityType<br/>على أي مورد؟"]
-
-    ENT_SYS["🖥️ SYSTEM<br/>النظام"]
-    ENT_APP["📱 APP<br/>التطبيق"]
-    ENT_ARTICLE["📝 ARTICLE<br/>المقال"]
-    ENT_ARTCOM["💬 ARTICLE_COMMENT<br/>تعليق المقال"]
-    ENT_ISSUE["🎫 ISSUE<br/>المهمة"]
-    ENT_ATTACH["📎 ATTACHMENT<br/>المرفق"]
-    ENT_COMMENT["🗨️ COMMENT<br/>التعليق"]
-    ENT_WORK["⏱️ WORK_ITEM<br/>عنصر العمل"]
-    ENT_ORG["🏛️ ORGANIZATION<br/>المؤسسة"]
-    ENT_PROJ["📂 PROJECT<br/>المشروع"]
-    ENT_USER["👤 USER<br/>المستخدم"]
-    ENT_WATCH["👁️ WATCH_FOLDER<br/>مجلد المراقبة"]
-
-    PERM -->|"أي مورد؟"| ENTITY
+    PERM -->|"على أي مورد؟"| ENTITY
     ENTITY --> ENT_SYS
     ENTITY --> ENT_APP
     ENTITY --> ENT_ARTICLE
@@ -94,20 +62,20 @@ graph TB
     ENTITY --> ENT_WATCH
 
     %% ═══════════════════════════════════════════════════════
-    %% Dimension 4: OperationType — ما هو الإجراء المسموح؟
+    %% Dimension 3: OperationType — ما هو الإجراء؟
     %% ═══════════════════════════════════════════════════════
-    OPERATION["⚡ البُعد الرابع<br/>OperationType<br/>ما هو الإجراء المسموح؟"]
+    OPERATION["⚡ البُعد الثالث<br/>OperationType<br/>ما هو الإجراء؟"]
 
-    OP_CREATE["➕ CREATE<br/>إنشاء"]
-    OP_READ["👁️ READ<br/>قراءة"]
-    OP_UPDATE["✏️ UPDATE<br/>تعديل"]
-    OP_DELETE["🗑️ DELETE<br/>حذف"]
-    OP_LINK["🔗 LINK<br/>ربط"]
-    OP_SHARE["🤝 SHARE<br/>مشاركة"]
-    OP_ADMIN["🛡️ ADMIN<br/>إدارة"]
-    OP_SPECIAL["⭐ SPECIAL<br/>خاص"]
+    OP_CREATE["➕ CREATE<br/>إنشاء مورد جديد"]
+    OP_READ["👁️ READ<br/>قراءة وعرض"]
+    OP_UPDATE["✏️ UPDATE<br/>تعديل وتحديث"]
+    OP_DELETE["🗑️ DELETE<br/>حذف المورد"]
+    OP_LINK["🔗 LINK<br/>ربط التذاكر"]
+    OP_SHARE["👥 SHARE<br/>مشاركة العروض"]
+    OP_ADMIN["⚙️ ADMIN<br/>إدارة متقدمة"]
+    OP_SPECIAL["🌟 SPECIAL<br/>إجراءات خاصة"]
 
-    PERM -->|"أي إجراء؟"| OPERATION
+    PERM -->|"ما هو الإجراء؟"| OPERATION
     OPERATION --> OP_CREATE
     OPERATION --> OP_READ
     OPERATION --> OP_UPDATE
@@ -117,53 +85,17 @@ graph TB
     OPERATION --> OP_ADMIN
     OPERATION --> OP_SPECIAL
 
-    %% ═══════════════════════════════════════════════════════
-    %% CRUD Grouping
-    %% ═══════════════════════════════════════════════════════
-    subgraph CRUD["عمليات CRUD الأساسية"]
-        OP_CREATE
-        OP_READ
-        OP_UPDATE
-        OP_DELETE
-    end
+    %% ─────────────────────────────────────────────
+    %% Styling and Classes
+    %% ─────────────────────────────────────────────
+    classDef permNode fill:#7c3aed,stroke:#5b21b6,stroke-width:3px,color:#fff,font-weight:bold
+    classDef dimNode fill:#1e293b,stroke:#475569,stroke-width:2px,color:#f8fafc,font-weight:bold
+    classDef scopeNode fill:#0284c7,stroke:#0369a1,stroke-width:1.5px,color:#fff
+    classDef entityNode fill:#0d9488,stroke:#0f766e,stroke-width:1.5px,color:#fff
+    classDef opNode fill:#d97706,stroke:#b45309,stroke-width:1.5px,color:#fff
 
-    subgraph EXTENDED["عمليات مُوسَّعة"]
-        OP_LINK
-        OP_SHARE
-        OP_ADMIN
-        OP_SPECIAL
-    end
-
-    %% ═══════════════════════════════════════════════════════
-    %% Example: Complete Permission Definition
-    %% ═══════════════════════════════════════════════════════
-    EXAMPLE["📋 مثال: تحديد صلاحية كاملة<br/>━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━<br/>ID: read-issue<br/>Scope: PROJECT 📁<br/>Module: ISSUE 🎫<br/>Entity: ISSUE 🎫<br/>Operation: READ 👁️<br/>━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━<br/>المعنى: قراءة المهام داخل مشروع محدد"]
-
-    SCOPE_PROJ -.->|"مثال"| EXAMPLE
-    MOD_ISSUE -.->|"مثال"| EXAMPLE
-    ENT_ISSUE -.->|"مثال"| EXAMPLE
-    OP_READ -.->|"مثال"| EXAMPLE
-
-    %% ═══════════════════════════════════════════════════════
-    %% Styling
-    %% ═══════════════════════════════════════════════════════
-    classDef center fill:#1a1a2e,stroke:#e94560,stroke-width:3px,color:#eee,font-size:14px
-    classDef dimTitle fill:#16213e,stroke:#0f3460,stroke-width:2px,color:#e2e2e2,font-size:13px
-    classDef scopeNode fill:#0d7377,stroke:#14ffec,stroke-width:1px,color:#fff,font-size:11px
-    classDef moduleNode fill:#533483,stroke:#a855f7,stroke-width:1px,color:#fff,font-size:11px
-    classDef entityNode fill:#2d4059,stroke:#60a5fa,stroke-width:1px,color:#fff,font-size:11px
-    classDef operationNode fill:#b91c1c,stroke:#f87171,stroke-width:1px,color:#fff,font-size:11px
-    classDef exampleNode fill:#065f46,stroke:#34d399,stroke-width:2px,color:#fff,font-size:11px
-    classDef crudGroup fill:transparent,stroke:#f87171,stroke-width:1px,stroke-dasharray:5 5,color:#fca5a5
-    classDef extGroup fill:transparent,stroke:#fbbf24,stroke-width:1px,stroke-dasharray:5 5,color:#fcd34d
-
-    class PERM center
-    class SCOPE,MODULE,ENTITY,OPERATION dimTitle
-
+    class PERM permNode
+    class SCOPE,ENTITY,OPERATION dimNode
     class SCOPE_GLOBAL,SCOPE_ORG,SCOPE_PROJ scopeNode
-    class MOD_SYS,MOD_APP,MOD_ARTICLE,MOD_ARTCOM,MOD_ISSUE,MOD_ATTACH,MOD_ISSCOM,MOD_WORK,MOD_ORG,MOD_PROJ,MOD_USER,MOD_WATCH moduleNode
     class ENT_SYS,ENT_APP,ENT_ARTICLE,ENT_ARTCOM,ENT_ISSUE,ENT_ATTACH,ENT_COMMENT,ENT_WORK,ENT_ORG,ENT_PROJ,ENT_USER,ENT_WATCH entityNode
-    class OP_CREATE,OP_READ,OP_UPDATE,OP_DELETE,OP_LINK,OP_SHARE,OP_ADMIN,OP_SPECIAL operationNode
-    class EXAMPLE exampleNode
-    class CRUD crudGroup
-    class EXTENDED extGroup
+    class OP_CREATE,OP_READ,OP_UPDATE,OP_DELETE,OP_LINK,OP_SHARE,OP_ADMIN,OP_SPECIAL opNode

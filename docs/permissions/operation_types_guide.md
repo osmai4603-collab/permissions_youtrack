@@ -10,7 +10,7 @@
 
 في هندسة البرمجيات وأنظمة إدارة الوصول المعقدة مثل **JetBrains YouTrack**، لا يكفي تعريف الصلاحية بمجرد اسم نصي مبهم (مثل `PERM_01`) أو الاكتفاء بالنموذج الرباعي التقليدي البسيط (CRUD).
 
-يمثل `OperationType` **الفعل التشغيلي أو الغرض الإجرائي** الذي ينفذه المستخدم أو النظام ضد كيان معين (`EntityType`) داخل نطاق وظيفي (`ModuleType`).
+يمثل `OperationType` **الفعل التشغيلي أو الغرض الإجرائي** الذي ينفذه المستخدم أو النظام ضد كيان معين (`EntityType`) ضمن نطاق صلاحيات محدد (`ScopeLevel`).
 
 ```go
 // OperationType defines the CRUD or operational action.
@@ -169,24 +169,24 @@ const (
 
 ## 4. كيف تتكامل العمليات (`OperationType`) مع بنية الصلاحية (`Permission`)؟
 
-داخل الكود المصدري في [`permission.go`](../../internal/services/permissions_services/permission.go#L65-L77)، تتكامل أربعة أبعاد لبناء كل صلاحية:
+داخل الكود المصدري في [`permission.go`](../../internal/services/permissions_services/permission.go#L48-L60)، تتكامل ثلاثة أبعاد لبناء كل صلاحية وفق معيار YouTrack الرسمي:
 
 ```text
- ┌─────────────────────────────────────────────────────────────┐
- │                    YouTrack Permission                      │
- ├─────────────────┬──────────────────┬──────────────┬─────────┤
- │   ModuleType    │    EntityType    │  ScopeLevel  │Operation│
- │ (المجال الوظيفي) │ (المورد المستهدف)│ (نطاق الأثر) │ (الفعل) │
- └─────────────────┴──────────────────┴──────────────┴─────────┘
+ ┌───────────────────────────────────────────────────┐
+ │                YouTrack Permission                │
+ ├──────────────────┬──────────────┬─────────────────┤
+ │    EntityType    │  ScopeLevel  │  OperationType  │
+ │ (المورد المستهدف)│ (نطاق الأثر) │ (الفعل المنفذ)  │
+ └──────────────────┴──────────────┴─────────────────┘
 ```
 
 ### أمثلة من الكتالوج البرمجي تُوضح هذا التناغم
 
 ```go
-//a 1. صلاحية إنشاء مقال في قاعدة المعرفة:
+// catalog examples
+// 1. صلاحية إنشاء مقال في قاعدة المعرفة:
 Permission{
     ID:        "CREATE_ARTICLE",
-    Module:    ModuleArticle,    // المجال: المقالات
     Entity:    EntityArticle,    // الكيان: المقال
     Scope:     ScopeProject,     // النطاق: داخل المشروع
     Operation: OpCreate,         // العملية: إنشاء
@@ -195,7 +195,6 @@ Permission{
 // 2. صلاحية ربط التذاكر ببعضها:
 Permission{
     ID:        "LINK_ISSUE",
-    Module:    ModuleIssue,      // المجال: التذاكر
     Entity:    EntityIssue,      // الكيان: التذكرة
     Scope:     ScopeProject,     // النطاق: داخل المشروع
     Operation: OpLink,           // العملية: ربط طوبولوجي
@@ -204,7 +203,6 @@ Permission{
 // 3. صلاحية تخطي مجموعات الرؤية الخاصة (تدقيق ورقابة):
 Permission{
     ID:        "READ_HIDDEN_STUFF",
-    Module:    ModuleIssue,      // المجال: التذاكر
     Entity:    EntityIssue,      // الكيان: التذكرة
     Scope:     ScopeProject,     // النطاق: داخل المشروع
     Operation: OpSpecial,        // العملية: تدقيق وتجاوز استثنائي
@@ -213,7 +211,6 @@ Permission{
 // 4. صلاحية مشاركة مجلدات البحث والوسوم:
 Permission{
     ID:        "SHARE_WATCH_FOLDER",
-    Module:    ModuleWatchFolder, // المجال: الوسوم والبحث
     Entity:    EntityWatchFolder, // الكيان: مجلد المتابعة
     Scope:     ScopeProject,      // النطاق: داخل المشروع
     Operation: OpShare,           // العملية: تفويض ومشاركة

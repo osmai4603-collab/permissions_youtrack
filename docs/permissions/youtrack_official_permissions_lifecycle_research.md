@@ -95,7 +95,7 @@ graph LR
 
 في [`Permission`](../../internal/services/permissions_services/permission.go#L66-L77) والقسم 3 من الدليل:
 
-- تم تأطير الصلاحية بالأبعاد الأربعة الصريحة: `ScopeLevel`, `ModuleType`, `EntityType`, `OperationType`.
+- تم تأطير الصلاحية بالأبعاد الثلاثية الصريحة: `ScopeLevel`, `EntityType`, `OperationType`.
 - تضمين مصفوفة `ImpliedPerms` ومصفوفة `DependentPerms` بشكل ثنائي الاتجاه ودقيق في كتالوج الصلاحيات الافتراضي [`catalog.go`](../../internal/services/permissions_services/catalog.go).
 
 ---

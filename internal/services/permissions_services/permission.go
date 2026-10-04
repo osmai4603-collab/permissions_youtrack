@@ -12,23 +12,6 @@ const (
 	ScopeProject ScopeLevel = "PROJECT"
 )
 
-// ModuleType represents the functional domain in YouTrack.
-type ModuleType string
-
-const (
-	ModuleSystem          ModuleType = "SYSTEM"
-	ModuleApp             ModuleType = "APP"
-	ModuleArticle         ModuleType = "ARTICLE"
-	ModuleArticleComment  ModuleType = "ARTICLE_COMMENT"
-	ModuleIssue           ModuleType = "ISSUE"
-	ModuleIssueAttachment ModuleType = "ISSUE_ATTACHMENT"
-	ModuleIssueComment    ModuleType = "ISSUE_COMMENT"
-	ModuleIssueWorkItem   ModuleType = "ISSUE_WORK_ITEM"
-	ModuleOrganization    ModuleType = "ORGANIZATION"
-	ModuleProject         ModuleType = "PROJECT"
-	ModuleUser            ModuleType = "USER"
-	ModuleWatchFolder     ModuleType = "WATCH_FOLDER"
-)
 
 // EntityType represents the target resource being governed.
 type EntityType string
@@ -68,7 +51,6 @@ type Permission struct {
 	DisplayName    string        `json:"display_name"`
 	Description    string        `json:"description"`
 	IsGlobal       bool          `json:"is_global"`
-	Module         ModuleType    `json:"module"`
 	Entity         EntityType    `json:"entity"`
 	Scope          ScopeLevel    `json:"scope"`
 	Operation      OperationType `json:"operation"`

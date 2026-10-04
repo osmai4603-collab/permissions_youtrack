@@ -106,7 +106,7 @@
 
 تحتوي القائمة التالية على جميع الصلاحيات المعرفة في YouTrack مصنفة حسب الوحدات الوظيفية:
 
-| المعرف البرمجي (Key) | الاسم المعروض (Display Name) | الوحدة (Module) | النطاق (Scope) | العملية | الصلاحيات المتضمنة (Implied) | الصلاحيات التابعة (Dependent) | الوصف المختصر |
+| المعرف البرمجي (Key) | الاسم المعروض (Display Name) | الكيان (Entity) | النطاق (Scope) | العملية | الصلاحيات المتضمنة (Implied) | الصلاحيات التابعة (Dependent) | الوصف المختصر |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
 | `ADMIN_READ_APP` | Low-level Admin Read | SYSTEM | GLOBAL | READ | - | `ADMIN_UPDATE_APP` | قراءة الإعدادات الإدارية المنخفضة والقياسات والمجموعات والأدوار. |
 | `ADMIN_UPDATE_APP` | Low-level Admin Write | SYSTEM | GLOBAL | ADMIN | `ADMIN_READ_APP` | - | إدارة الإجراءات الإدارية المتقدمة والنسخ الاحتياطي وإدارة المجموعات والأدوار عالمياً. |
@@ -173,7 +173,7 @@
 تم تضمين نتائج هذا التحليل بالكامل داخل حزمة Go الرسمية للخدمة:
 
 1. **`permission.go`**:
-   - تعريف الأنواع الأساسية (`ScopeLevel`, `ModuleType`, `EntityType`, `OperationType`).
+   - تعريف الأنواع الأساسية (`ScopeLevel`, `EntityType`, `OperationType`).
    - هيكل `Permission` مع حقول التعاريف والتضمين والتبعية ووسوم JSON.
    - تعريف حالات الحقوق المتأصلة `InherentAction`.
 

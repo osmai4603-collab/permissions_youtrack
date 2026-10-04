@@ -1,31 +1,30 @@
-# دليل تفصيل النطاقات والوحدات والموارد والعمليات (Scoped Permissions Architecture Guide)
+# دليل تفصيل النطاقات والموارد والعمليات الرسمية (Scoped Permissions Architecture Guide)
 
 **الملف المصدري لأنواع الأبعاد:** [`internal/services/permissions_services/permission.go`](../../internal/services/permissions_services/permission.go)  
 **كتالوج الصلاحيات الفعلي:** [`internal/services/permissions_services/catalog.go`](../../internal/services/permissions_services/catalog.go)  
 **محرك التحقق والتصفية:** [`internal/services/permissions_services/service.go`](../../internal/services/permissions_services/service.go#L189-L222)  
 **المخطط الرسومي الشجري:** [`docs/permissions/diagrams/scope_modules_entities_operations.mmd`](./diagrams/scope_modules_entities_operations.mmd)  
-**مخطط الأبعاد الأربعة:** [`docs/permissions/diagrams/permissions_four_dimensions.mmd`](./diagrams/permissions_four_dimensions.mmd)
+**مخطط الأبعاد الثلاثية:** [`docs/permissions/diagrams/permissions_four_dimensions.mmd`](./diagrams/permissions_four_dimensions.mmd)
 
 ---
 
 ## 1. نظرة عامة ومعمارية
 
-يكتمل تعريف أي صلاحية في نظام **JetBrains YouTrack** عبر مسار هرمي رباعي يربط بين:
+يكتمل تعريف أي صلاحية في نظام **JetBrains YouTrack** عبر مسار هرمي ثلاثي معتمد يربط بين:
 
 1. **النطاق (`ScopeLevel`):** أين تسري الصلاحية وما هو أفق وحدود تطبيقها؟
-2. **الوحدة الوظيفية (`ModuleType`):** ما هو المجال أو البوابة البرمجية المسؤولة عن هذا الاختصاص؟
-3. **المورد المستهدف (`EntityType`):** ما هو الكيان والبيانات المستهدفة بالحماية؟
-4. **نوع الإجراء (`OperationType`):** ما هو الفعل المسموح تنفيذه على المورد؟
+2. **المورد المستهدف (`EntityType`):** ما هو الكيان والبيانات المستهدفة بالحماية؟
+3. **نوع الإجراء (`OperationType`):** ما هو الفعل المسموح تنفيذه على المورد؟
 
-$$ \text{ScopeLevel} \xrightarrow{\text{يشمل}} \text{ModuleType} \xrightarrow{\text{يحكم}} \text{EntityType} \xrightarrow{\text{ينفذ}} \text{OperationType} $$
+$$ \text{ScopeLevel} \xrightarrow{\text{يحكم}} \text{EntityType} \xrightarrow{\text{ينفذ}} \text{OperationType} $$
 
 يقسم الكتالوج الصلاحيات الـ 57 في النظام إلى ثلاثة نطاقات رئيسية وفق الجدول الإحصائي التالي:
 
-| مستوى النطاق (`ScopeLevel`) | عدد الوحدات (`Modules`) | عدد الموارد (`Entities`) | عدد الصلاحيات المباشرة | الغرض الأمني والمعماري |
-| :--- | :---: | :---: | :---: | :--- |
-| **`ScopeGlobal`** | 4 | 4 | 10 | إدارة إعدادات الخادم، حسابات المستخدمين، وحجز الموارد العليا (مؤسسات/مشاريع). |
-| **`ScopeOrganization`** | 1 | 1 | 3 | حوكمة المؤسسة المستأجرة (Tenant Isolation) وإدارتها وحذفها. |
-| **`ScopeProject`** | 9 | 9 | 44 | إدارة العمل اليومي المشترك: التذاكر، المقالات، التعليقات، المرفقات، وساعات العمل. |
+| مستوى النطاق (`ScopeLevel`)  عدد الموارد (`Entities`) | عدد الصلاحيات المباشرة | الغرض الأمني والمعماري |
+| :--- | :---: | :---: | :--- |
+| **`ScopeGlobal`** | 4 | 10 | إدارة إعدادات الخادم، حسابات المستخدمين، وحجز الموارد العليا (مؤسسات/مشاريع). |
+| **`ScopeOrganization`** | 1 | 3 | حوكمة المؤسسة المستأجرة (Tenant Isolation) وإدارتها وحذفها. |
+| **`ScopeProject`** | 9 | 44 | إدارة العمل اليومي المشترك: التذاكر، المقالات، التعليقات، المرفقات، وساعات العمل. |
 
 ---
 
@@ -41,10 +40,6 @@ $$ \text{ScopeLevel} \xrightarrow{\text{يشمل}} \text{ModuleType} \xrightarro
 graph LR
     SCOPE_G["🌐 ScopeGlobal"]
     
-    MOD_SYS["⚙️ ModuleSystem"]
-    MOD_USER["⚙️ ModuleUser"]
-    MOD_ORG["⚙️ ModuleOrganization"]
-    MOD_PROJ["⚙️ ModuleProject"]
     
     ENT_SYS["🎯 EntitySystem"]
     ENT_USER["🎯 EntityUser"]
@@ -56,26 +51,22 @@ graph LR
     OPS_ORG["⚡ CREATE"]
     OPS_PROJ["⚡ CREATE"]
     
-    SCOPE_G --> MOD_SYS --> ENT_SYS --> OPS_SYS
-    SCOPE_G --> MOD_USER --> ENT_USER --> OPS_USER
-    SCOPE_G --> MOD_ORG --> ENT_ORG --> OPS_ORG
-    SCOPE_G --> MOD_PROJ --> ENT_PROJ --> OPS_PROJ
 ```
 
 #### جدول التفصيل البرمجي لنطاق `ScopeGlobal`
 
-| الوحدة الوظيفية (`Module`) | المورد المستهدف (`Entity`) | نوع الإجراء (`Operation`) | مفتاح الصلاحية (`Permission ID`) | الوصف والوظيفة |
-| :--- | :--- | :--- | :--- | :--- |
-| **`ModuleSystem`** | `EntitySystem` | `OpRead` | `ADMIN_READ_APP` | قراءة إعدادات النظام المنخفضة، السجلات، والمقاييس. |
-| **`ModuleSystem`** | `EntitySystem` | `OpAdmin` | `ADMIN_UPDATE_APP` | تعديل إعدادات النظام، التراخيص، وإدارة التكاملات. |
-| **`ModuleUser`** | `EntityUser` | `OpCreate` | `CREATE_USER` | إنشاء حسابات مستخدمين جديدة على الخادم. |
-| **`ModuleUser`** | `EntityUser` | `OpRead` | `READ_USER_BASIC` | قراءة البيانات العامة لحسابات المستخدمين. |
-| **`ModuleUser`** | `EntityUser` | `OpRead` | `READ_USER` | قراءة التفاصيل الكاملة للمستخدم (البريد، المجموعات، الأدوار). |
-| **`ModuleUser`** | `EntityUser` | `OpUpdate` | `UPDATE_PROFILE` | تحديث المستخدم لملفه الشخصي وإعداداته الذاتية. |
-| **`ModuleUser`** | `EntityUser` | `OpUpdate` | `UPDATE_USER` | تحديث وتعديل حسابات المستخدمين الآخرين وحالاتهم. |
-| **`ModuleUser`** | `EntityUser` | `OpDelete` | `DELETE_USER` | حذف أو حظر حسابات المستخدمين من الخادم. |
-| **`ModuleOrganization`** | `EntityOrganization` | `OpCreate` | `CREATE_ORGANIZATION` | إنشاء وتأسيس مؤسسة جديدة على مستوى الخادم. |
-| **`ModuleProject`** | `EntityProject` | `OpCreate` | `CREATE_PROJECT` | إنشاء وتأسيس مشروع جديد على مستوى الخادم. |
+| المورد المستهدف (`Entity`) | نوع الإجراء (`Operation`) | مفتاح الصلاحية (`Permission ID`) | الوصف والوظيفة |
+| :--- | :--- | :--- | :--- |
+| `EntitySystem` | `OpRead` | `ADMIN_READ_APP` | قراءة إعدادات النظام المنخفضة، السجلات، والمقاييس. |
+| `EntitySystem` | `OpAdmin` | `ADMIN_UPDATE_APP` | تعديل إعدادات النظام، التراخيص، وإدارة التكاملات. |
+| `EntityUser` | `OpCreate` | `CREATE_USER` | إنشاء حسابات مستخدمين جديدة على الخادم. |
+| `EntityUser` | `OpRead` | `READ_USER_BASIC` | قراءة البيانات العامة لحسابات المستخدمين. |
+| `EntityUser` | `OpRead` | `READ_USER` | قراءة التفاصيل الكاملة للمستخدم (البريد، المجموعات، الأدوار). |
+| `EntityUser` | `OpUpdate` | `UPDATE_PROFILE` | تحديث المستخدم لملفه الشخصي وإعداداته الذاتية. |
+| `EntityUser` | `OpUpdate` | `UPDATE_USER` | تحديث وتعديل حسابات المستخدمين الآخرين وحالاتهم. |
+| `EntityUser` | `OpDelete` | `DELETE_USER` | حذف أو حظر حسابات المستخدمين من الخادم. |
+| `EntityOrganization` | `OpCreate` | `CREATE_ORGANIZATION` | إنشاء وتأسيس مؤسسة جديدة على مستوى الخادم. |
+| `EntityProject` | `OpCreate` | `CREATE_PROJECT` | إنشاء وتأسيس مشروع جديد على مستوى الخادم. |
 
 > 💡 **ملاحظة معمارية:** صلاحيات إنشاء المؤسسات والمشاريع (`CREATE_ORGANIZATION` و `CREATE_PROJECT`) تقع حصراً تحت `ScopeGlobal`، لأن إنشاء حاوية جديدة يتطلب تخصيص مساحة وتسمية على مستوى الخادم ككل لمنع تضارب المعرفات (Keys).
 
@@ -94,20 +85,18 @@ graph LR
 ```mermaid
 graph LR
     SCOPE_O["🏢 ScopeOrganization"]
-    MOD_ORG["⚙️ ModuleOrganization"]
     ENT_ORG["🎯 EntityOrganization"]
     OPS_ORG["⚡ READ, UPDATE, DELETE"]
     
-    SCOPE_O --> MOD_ORG --> ENT_ORG --> OPS_ORG
 ```
 
 #### جدول التفصيل البرمجي لنطاق `ScopeOrganization`
 
-| الوحدة الوظيفية (`Module`) | المورد المستهدف (`Entity`) | نوع الإجراء (`Operation`) | مفتاح الصلاحية (`Permission ID`) | الوصف والوظيفة |
-| :--- | :--- | :--- | :--- | :--- |
-| **`ModuleOrganization`** | `EntityOrganization` | `OpRead` | `READ_ORGANIZATION` | استعراض بيانات المؤسسة المعينة وقائمة المشاريع والمستخدمين المنتمين إليها. |
-| **`ModuleOrganization`** | `EntityOrganization` | `OpUpdate` | `UPDATE_ORGANIZATION` | تعديل إعدادات المؤسسة، الشعار، وإسناد المشاريع إليها. |
-| **`ModuleOrganization`** | `EntityOrganization` | `OpDelete` | `DELETE_ORGANIZATION` | إزالة المؤسسة وسجلاتها من النظام. |
+| المورد المستهدف (`Entity`) | نوع الإجراء (`Operation`) | مفتاح الصلاحية (`Permission ID`) | الوصف والوظيفة |
+| :--- | :--- | :--- | :--- |
+| `EntityOrganization` | `OpRead` | `READ_ORGANIZATION` | استعراض بيانات المؤسسة المعينة وقائمة المشاريع والمستخدمين المنتمين إليها. |
+| `EntityOrganization` | `OpUpdate` | `UPDATE_ORGANIZATION` | تعديل إعدادات المؤسسة، الشعار، وإسناد المشاريع إليها. |
+| `EntityOrganization` | `OpDelete` | `DELETE_ORGANIZATION` | إزالة المؤسسة وسجلاتها من النظام. |
 
 > ⚠️ **العزل الصارم:** المستخدم الذي يمتلك دور "مدير مؤسسة" يملك فقط هذه الصلاحيات الثلاث على مستوى مؤسسته، ولا يستطيع إنشاء مؤسسة جديدة، ولا يستطيع العبث بإعدادات خادم YouTrack الشاملة.
 
@@ -239,7 +228,7 @@ graph TD
 
 تلخص المصفوفة التالية العلاقة التامة بين كل مستوى نطاق وما يندرج تحته:
 
-| النطاق (`ScopeLevel`) | الوحدة (`ModuleType`) | المورد (`EntityType`) | العمليات المتاحة (`OperationTypes`) | عدد الصلاحيات |
+| النطاق (`ScopeLevel`)  المورد (`EntityType`) | العمليات المتاحة (`OperationTypes`) | عدد الصلاحيات |
 | :--- | :--- | :--- | :--- | :---: |
 | **`GLOBAL`** | `SYSTEM` | `SYSTEM` | `READ`, `ADMIN` | 2 |
 | **`GLOBAL`** | `USER` | `USER` | `CREATE`, `READ`, `UPDATE`, `DELETE` | 6 |
