@@ -51,7 +51,7 @@ const (
 
 - **المعنى:** حق قراءة وعرض الحقول العامة (Public Fields) للتذكرة التي أنشأها المستخدم بنفسه.
 - **كيف يعمل؟** إذا كان المستخدم هو صاحب التذكرة (`isAuthorOrReporter = true`) ويمتلك صلاحية الإنشاء `CREATE_ISSUE`، يستطيع رؤية تفاصيل تذكرته الأساسية وحقولها العامة (كالعنوان، الوصف، الحالة العامة) حتى لو لم يكن دوره يمتلك صلاحية القراءة العامة للمشروع `READ_ISSUE`.
-- **الاستثناء:** لا يمنحه هذا قراءة الحقول الخاصة أو الحساسة (Private Fields)؛ إذ تتطلب تلك صلاحية صريحة لـ `READ_ISSUE_PRIVATE_FIELDS`.
+- **الاستثناء:** لا يمنحه هذا قراءة الحقول الخاصة أو الحساسة (Private Fields)؛ إذ تتطلب تلك صلاحية صريحة لـ `PRIVATE_READ_ISSUE`.
 
 #### 2. `InherentUpdateOwnIssuePublicFields` (`UPDATE_OWN_ISSUE_PUBLIC_FIELDS`)
 
@@ -257,7 +257,7 @@ func (h *IssueHandler) UpdateIssue(w http.ResponseWriter, r *http.Request) {
 
 | الإجراء المتأصل (`InherentAction`) | الكيان الهدف | الشرط التمكيني الأدنى | ما تشمله الصلاحية المتأصلة | ⛔ ما **لا** تشمله الصلاحية المتأصلة |
 | :--- | :--- | :--- | :--- | :--- |
-| `READ_OWN_ISSUE_PUBLIC_FIELDS` | التذاكر (Issues) | `CREATE_ISSUE` | قراءة الحقول العامة لتذكرته | قراءة الحقول الخاصة (`READ_ISSUE_PRIVATE_FIELDS`). |
+| `READ_OWN_ISSUE_PUBLIC_FIELDS` | التذاكر (Issues) | `CREATE_ISSUE` | قراءة الحقول العامة لتذكرته | قراءة الحقول الخاصة (`PRIVATE_READ_ISSUE`). |
 | `UPDATE_OWN_ISSUE_PUBLIC_FIELDS` | التذاكر (Issues) | `CREATE_ISSUE` | تعديل العنوان، الوصف، الحقول العامة | تعديل تذاكر الآخرين أو الحقول الخاصة. |
 | `LINK_OWN_ISSUE` | التذاكر (Issues) | `CREATE_ISSUE` | ربط تذكرته بتذاكر أخرى | تعديل روابط تذاكر الغير. |
 | `MODIFY_OWN_ATTACHMENT` | المرفقات (Attachments) | `CREATE_ATTACHMENT_ISSUE` | إعادة تسمية المرفق وتعديل بياناته | تعديل مرفقات رفعها غيره. |

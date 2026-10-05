@@ -19,12 +19,11 @@ const (
 
 // Role models a YouTrack role, which acts as a container for permissions.
 type Role struct {
-	ID          string           `json:"id"`
-	Name        string           `json:"name"`
-	Description string           `json:"description"`
-	Permissions []string         `json:"permissions"`
-	Scope       perms.ScopeLevel `json:"scope"`
-	IsReadOnly  bool             `json:"is_read_only"`
+	ID          string   `json:"id"`
+	Name        string   `json:"name"`
+	Description string   `json:"description"`
+	Permissions []string `json:"permissions"`
+	IsReadOnly  bool     `json:"is_read_only"`
 }
 
 // HasPermission checks if the role contains the given permission ID.
@@ -67,8 +66,8 @@ func BuildDefaultRoles(permSvc perms.IPermissionService) map[string]Role {
 		Name:        "System Admin",
 		Description: "Full administrative access to the entire YouTrack installation and all projects and organizations.",
 		Permissions: allPermIDs,
-		Scope:       perms.ScopeGlobal,
-		IsReadOnly:  true,
+
+		IsReadOnly: true,
 	}
 
 	// 2. Project Admin: project administration, issues, articles, comments, work items
@@ -131,8 +130,7 @@ func BuildDefaultRoles(permSvc perms.IPermissionService) map[string]Role {
 		Name:        "Project Admin",
 		Description: "Administrative access to project settings, issues, comments, work items, and articles.",
 		Permissions: resolvedProjectAdmin,
-		Scope:       perms.ScopeProject,
-		IsReadOnly:  true,
+		IsReadOnly:  false,
 	}
 
 	// 3. Contributor: daily work on issues, articles, comments, and work items
@@ -180,8 +178,7 @@ func BuildDefaultRoles(permSvc perms.IPermissionService) map[string]Role {
 		Name:        "Contributor",
 		Description: "Standard role for project team members to create and edit issues, comments, work items, and articles.",
 		Permissions: resolvedContributor,
-		Scope:       perms.ScopeProject,
-		IsReadOnly:  true,
+		IsReadOnly:  false,
 	}
 
 	// 4. Observer: basic user profile access
@@ -197,8 +194,7 @@ func BuildDefaultRoles(permSvc perms.IPermissionService) map[string]Role {
 		Name:        "Observer",
 		Description: "Basic access to view user profiles and update own profile.",
 		Permissions: resolvedObserver,
-		Scope:       perms.ScopeGlobal,
-		IsReadOnly:  true,
+		IsReadOnly:  false,
 	}
 
 	// 5. User Manager: creating users globally
@@ -212,8 +208,7 @@ func BuildDefaultRoles(permSvc perms.IPermissionService) map[string]Role {
 		Name:        "User Manager",
 		Description: "Ability to create new user accounts in YouTrack.",
 		Permissions: resolvedUserManager,
-		Scope:       perms.ScopeGlobal,
-		IsReadOnly:  true,
+		IsReadOnly:  false,
 	}
 
 	// 6. Project Creator: creating projects globally
@@ -227,8 +222,7 @@ func BuildDefaultRoles(permSvc perms.IPermissionService) map[string]Role {
 		Name:        "Project Creator",
 		Description: "Ability to create new projects in YouTrack.",
 		Permissions: resolvedProjectCreator,
-		Scope:       perms.ScopeGlobal,
-		IsReadOnly:  true,
+		IsReadOnly:  false,
 	}
 
 	// 7. Legacy Developer role (similar to Contributor for backward compatibility)
@@ -237,8 +231,7 @@ func BuildDefaultRoles(permSvc perms.IPermissionService) map[string]Role {
 		Name:        "Developer",
 		Description: "Legacy role for project team members in upgraded installations.",
 		Permissions: resolvedContributor,
-		Scope:       perms.ScopeProject,
-		IsReadOnly:  true,
+		IsReadOnly:  false,
 	}
 
 	return map[string]Role{

@@ -152,7 +152,6 @@ func TestPrivateCustomFieldsAccess(t *testing.T) {
 		ID:          "ROLE_PUBLIC_ONLY",
 		Name:        "Public Only",
 		Permissions: []string{perms.PermReadIssue},
-		Scope:       perms.ScopeProject,
 	})
 	_, _ = rolesSvc.AssignRole(adminPerms, customPublicReader.ID, roles.UserAssign("guest-user"), projFieldsScope)
 

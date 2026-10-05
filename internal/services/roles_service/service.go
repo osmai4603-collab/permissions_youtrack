@@ -164,7 +164,6 @@ func (svc *Service) CreateRole(actorPerms []string, role Role) (*Role, error) {
 		Name:        role.Name,
 		Description: role.Description,
 		Permissions: resolvedPerms,
-		Scope:       role.Scope,
 		IsReadOnly:  false, // Custom roles are always editable
 	}
 
@@ -281,7 +280,6 @@ func (svc *Service) CloneRole(actorPerms []string, sourceRoleID string, newRoleI
 		Name:        newName,
 		Description: newDescription,
 		Permissions: clonedPerms,
-		Scope:       source.Scope,
 		IsReadOnly:  false, // Cloned roles are always editable
 	}
 

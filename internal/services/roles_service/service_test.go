@@ -144,7 +144,6 @@ func TestRoleLifecycle_Create_Update_Delete(t *testing.T) {
 		Name:        "Issue Creator",
 		Description: "Can only create issues",
 		Permissions: []string{perms.PermCreateIssue},
-		Scope:       perms.ScopeProject,
 	})
 	if err != nil {
 		t.Fatalf("unexpected error creating role: %v", err)
@@ -230,7 +229,6 @@ func TestRoleLifecycle_Merge(t *testing.T) {
 		ID:          "TARGET_ROLE",
 		Name:        "Target Role",
 		Permissions: []string{perms.PermReadIssue, perms.PermCreateIssue},
-		Scope:       perms.ScopeProject,
 	})
 	if err != nil {
 		t.Fatalf("failed to create target role: %v", err)
@@ -241,7 +239,6 @@ func TestRoleLifecycle_Merge(t *testing.T) {
 		ID:          "SRC_ROLE_1",
 		Name:        "Source Role 1",
 		Permissions: []string{perms.PermReadIssue},
-		Scope:       perms.ScopeProject,
 	})
 	if err != nil {
 		t.Fatalf("failed to create src role 1: %v", err)
@@ -417,7 +414,6 @@ func TestDocumentationScenario2_Sara(t *testing.T) {
 			perms.PermCreateIssue,
 			perms.PermUpdateIssue,
 		},
-		Scope: perms.ScopeProject,
 	})
 	if err != nil {
 		t.Fatalf("failed creating Custom Lead role: %v", err)
@@ -477,7 +473,6 @@ func TestDocumentationScenario3_Khaled(t *testing.T) {
 		ID:          "CUSTOM_PROJECT_OBSERVER",
 		Name:        "Project Observer",
 		Permissions: []string{perms.PermReadProjectBasic},
-		Scope:       perms.ScopeProject,
 	})
 	if err != nil {
 		t.Fatalf("failed creating project observer: %v", err)
