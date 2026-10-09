@@ -1,0 +1,39 @@
+%% Group hierarchy and direct user memberships from the repository's seeded records.
+%% Run queries/get_group_names.sql for the current database memberships.
+flowchart TD
+    all_users["All Users"]
+    registered_users["Registered Users"]
+    reports_feature["Reports Feature Group"]
+    read_groups_feature["Read Groups Feature Group"]
+    read_user_details["Read User Details Group"]
+    create_project["Create Project Group"]
+    create_user["Create User Group"]
+    read_organization["Read Organization Group"]
+    t1a_members["T1A Project Members"]
+    t1b_members["T1B Project Members"]
+    t2a_members["T2A Project Members"]
+    t2b_members["T2B Project Members"]
+
+    all_users --> registered_users
+    all_users --> reports_feature
+    all_users --> read_groups_feature
+    all_users --> read_user_details
+    all_users --> create_project
+    all_users --> create_user
+    all_users --> read_organization
+    all_users --> t1a_members
+    all_users --> t1b_members
+    all_users --> t2a_members
+    all_users --> t2b_members
+
+    all_users --> all_users_admin["System Administrator"]
+    all_users --> all_users_test1["Test One"]
+    all_users --> all_users_test2["Test Two"]
+    all_users --> all_users_test3["Test Three"]
+    registered_users --> registered_users_admin["System Administrator"]
+    registered_users --> registered_users_test1["Test One"]
+    registered_users --> registered_users_test2["Test Two"]
+    registered_users --> registered_users_test3["Test Three"]
+
+    classDef user fill:#f4f4f4,stroke:#666,color:#222
+    class all_users_admin,all_users_test1,all_users_test2,all_users_test3,registered_users_admin,registered_users_test1,registered_users_test2,registered_users_test3 user

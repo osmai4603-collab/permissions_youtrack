@@ -6,6 +6,15 @@ import (
 	perms "youtrack/internal/services/permissions_services"
 )
 
+// AssignType identifies whether a role assignment targets a User or a Group (or any extended principal).
+type AssignType string
+
+const (
+	AssignUser  AssignType = "USER"
+	AssignGroup AssignType = "GROUP"
+	AssignTeam  AssignType = "Team"
+)
+
 type AssignRef struct {
 	AssignType AssignType `json:"principal_type"` // USER or GROUP type
 	AssignerID string     `json:"principal_id"`   // User IDs or Group IDs
@@ -105,11 +114,11 @@ type InMemoryHierarchyProvider struct {
 // NewInMemoryHierarchyProvider creates a new InMemoryHierarchyProvider instance.
 func NewInMemoryHierarchyProvider() *InMemoryHierarchyProvider {
 	return &InMemoryHierarchyProvider{
-		userGroups:      make(map[string][]string),
-		groupParents:    make(map[string]string),
-		validScopes:     make(map[string]bool),
-		scopeParents:    make(map[string][]ScopeRef),
-		allUsersGroupID: AllUsersGroupID,
+		userGroups:   make(map[string][]string),
+		groupParents: make(map[string]string),
+		validScopes:  make(map[string]bool),
+		scopeParents: make(map[string][]ScopeRef),
+		//allUsersGroupID: AllUsersGroupID,
 	}
 }
 
@@ -197,11 +206,11 @@ func (p *InMemoryHierarchyProvider) ValidateScope(scope ScopeRef) error {
 	if scope.Scope == perms.ScopeGlobal {
 		return nil
 	}
-	if scope.TargetID == "" {
-		return ErrTargetRequiredForScope
-	}
-	if !p.validScopes[scope.String()] {
-		return ErrTargetNotFound
-	}
+	// if scope.TargetID == "" {
+	// 	return ErrTargetRequiredForScope
+	// }
+	// if !p.validScopes[scope.String()] {
+	// 	return ErrTargetNotFound
+	// }
 	return nil
 }

@@ -12,10 +12,10 @@ func TestComplexTransitiveClosure_DeepChainsAndCycles(t *testing.T) {
 	svc := NewService()
 
 	t.Run("Deep Chain: UpdateUser -> UpdateSelf + ReadUserDetails -> ReadUserBasic", func(t *testing.T) {
-		input := []string{PermUpdateUser}
+		input := []PermKey{PermUpdateUser}
 		resolved := svc.ResolveImplied(input)
 
-		expectedSubset := []string{
+		expectedSubset := []PermKey{
 			PermUpdateUser,
 			PermUpdateSelf,
 			PermReadUserDetails,
@@ -38,11 +38,11 @@ func TestComplexTransitiveClosure_DeepChainsAndCycles(t *testing.T) {
 
 	t.Run("Multi-Root Overlapping Inputs", func(t *testing.T) {
 		// Both UpdateProject and UpdateIssue require ReadProjectBasic
-		input := []string{PermUpdateProject, PermUpdateIssue}
+		input := []PermKey{PermUpdateProject, PermUpdateIssue}
 		resolved := svc.ResolveImplied(input)
 
 		// Check for duplicates
-		seen := make(map[string]int)
+		seen := make(map[PermKey]int)
 		for _, p := range resolved {
 			seen[p]++
 			if seen[p] > 1 {
@@ -57,7 +57,7 @@ func TestComplexTransitiveClosure_DeepChainsAndCycles(t *testing.T) {
 	})
 
 	t.Run("Idempotency: Resolve(Resolve(X)) == Resolve(X)", func(t *testing.T) {
-		inputs := [][]string{
+		inputs := [][]PermKey{
 			{PermUpdateUser},
 			{PermCreateIssue, PermUpdateProject, PermDeleteIssue},
 			{PermLowLevelAdminWrite},
@@ -74,7 +74,7 @@ func TestComplexTransitiveClosure_DeepChainsAndCycles(t *testing.T) {
 	})
 
 	t.Run("Unknown and Empty IDs Resilience", func(t *testing.T) {
-		input := []string{"NON_EXISTENT_PERM_1", "INVALID_XYZ", PermCreateIssue}
+		input := []PermKey{"NON_EXISTENT_PERM_1", "INVALID_XYZ", PermCreateIssue}
 		resolved := svc.ResolveImplied(input)
 
 		// Must ignore invalid ones and safely resolve valid ones
@@ -99,7 +99,7 @@ func TestComplexCascadingRevocation_DiamondAndMultiBranch(t *testing.T) {
 	t.Run("Branch Isolation: Revoking Project Full does not drop Issue creation if basic remains", func(t *testing.T) {
 		// Active set: UpdateProject (implies ReadProjectFull -> ReadProjectBasic)
 		// and CreateIssue (implies ReadProjectBasic)
-		active := svc.ResolveImplied([]string{PermUpdateProject, PermCreateIssue})
+		active := svc.ResolveImplied([]PermKey{PermUpdateProject, PermCreateIssue})
 
 		// Revoke ReadProjectFull (which should drop UpdateProject, but NOT CreateIssue or ReadProjectBasic)
 		remaining := svc.ResolveRevocation(active, PermReadProjectFull)
@@ -139,7 +139,7 @@ func TestComplexCascadingRevocation_DiamondAndMultiBranch(t *testing.T) {
 	})
 
 	t.Run("Root Revocation: Pruning Root Drops Entire Dependency Forest", func(t *testing.T) {
-		active := svc.ResolveImplied([]string{
+		active := svc.ResolveImplied([]PermKey{
 			PermUpdateProject,
 			PermCreateIssue,
 			PermReadIssue,
@@ -155,7 +155,7 @@ func TestComplexCascadingRevocation_DiamondAndMultiBranch(t *testing.T) {
 	})
 
 	t.Run("Revoke Non-Existent Permission Has Zero Effect", func(t *testing.T) {
-		active := svc.ResolveImplied([]string{PermCreateIssue, PermUpdateUser})
+		active := svc.ResolveImplied([]PermKey{PermCreateIssue, PermUpdateUser})
 		remaining := svc.ResolveRevocation(active, "UNKNOWN_NON_EXISTENT_PERM")
 
 		if !reflect.DeepEqual(active, remaining) {
@@ -164,7 +164,7 @@ func TestComplexCascadingRevocation_DiamondAndMultiBranch(t *testing.T) {
 	})
 
 	t.Run("Revoke Leaf Node Removes Only That Leaf", func(t *testing.T) {
-		active := svc.ResolveImplied([]string{PermUpdateProject})
+		active := svc.ResolveImplied([]PermKey{PermUpdateProject})
 		// PermUpdateProject is a leaf (nothing in this set depends on it)
 		remaining := svc.ResolveRevocation(active, PermUpdateProject)
 
@@ -183,7 +183,7 @@ func TestComplexCascadingRevocation_DiamondAndMultiBranch(t *testing.T) {
 func TestValidatePermissionsForScope_ComplexBoundaryCases(t *testing.T) {
 	svc := NewService()
 	allPerms := svc.GetAllPermissions()
-	allIDs := make([]string, len(allPerms))
+	allIDs := make([]PermKey, len(allPerms))
 	for i, p := range allPerms {
 		allIDs[i] = p.ID
 	}
@@ -198,7 +198,7 @@ func TestValidatePermissionsForScope_ComplexBoundaryCases(t *testing.T) {
 	t.Run("ScopeOrganization Completely Excludes Global Permissions", func(t *testing.T) {
 		res := svc.ValidatePermissionsForScope(allIDs, ScopeOrganization)
 		for _, id := range res {
-			p, _ := svc.GetPermission(id)
+			p := svc.GetPermission(id)
 			if p.Scope == ScopeGlobal {
 				t.Fatalf("illegal global permission %s leaked into ScopeOrganization", id)
 			}
@@ -211,7 +211,7 @@ func TestValidatePermissionsForScope_ComplexBoundaryCases(t *testing.T) {
 	t.Run("ScopeProject Strictly Contains Only ScopeProject Permissions", func(t *testing.T) {
 		res := svc.ValidatePermissionsForScope(allIDs, ScopeProject)
 		for _, id := range res {
-			p, _ := svc.GetPermission(id)
+			p := svc.GetPermission(id)
 			if p.Scope != ScopeProject {
 				t.Fatalf("permission %s with scope %s leaked into ScopeProject", id, p.Scope)
 			}
@@ -219,7 +219,7 @@ func TestValidatePermissionsForScope_ComplexBoundaryCases(t *testing.T) {
 	})
 
 	t.Run("Empty Input Slice Handles Safely", func(t *testing.T) {
-		res := svc.ValidatePermissionsForScope([]string{}, ScopeProject)
+		res := svc.ValidatePermissionsForScope([]PermKey{}, ScopeProject)
 		if len(res) != 0 {
 			t.Errorf("expected empty slice, got %v", res)
 		}
@@ -235,7 +235,7 @@ func TestInherentPermissions_ComprehensiveMatrix(t *testing.T) {
 		name               string
 		action             InherentAction
 		isAuthorOrReporter bool
-		granted            map[string]bool
+		granted            map[PermKey]bool
 		expectedResult     bool
 		description        string
 	}{
@@ -244,21 +244,21 @@ func TestInherentPermissions_ComprehensiveMatrix(t *testing.T) {
 			name:               "Reporter with CreateIssue -> Allowed to Read Public Fields",
 			action:             InherentReadOwnIssuePublicFields,
 			isAuthorOrReporter: true,
-			granted:            map[string]bool{PermCreateIssue: true},
+			granted:            map[PermKey]bool{PermCreateIssue: true},
 			expectedResult:     true,
 		},
 		{
 			name:               "Reporter WITHOUT CreateIssue -> Denied Read Public Fields",
 			action:             InherentReadOwnIssuePublicFields,
 			isAuthorOrReporter: true,
-			granted:            map[string]bool{},
+			granted:            map[PermKey]bool{},
 			expectedResult:     false,
 		},
 		{
 			name:               "NON-Reporter with CreateIssue -> Denied Read Public Fields",
 			action:             InherentReadOwnIssuePublicFields,
 			isAuthorOrReporter: false,
-			granted:            map[string]bool{PermCreateIssue: true},
+			granted:            map[PermKey]bool{PermCreateIssue: true},
 			expectedResult:     false,
 		},
 		// 2. Issue Reporter Linking
@@ -266,7 +266,7 @@ func TestInherentPermissions_ComprehensiveMatrix(t *testing.T) {
 			name:               "Reporter with CreateIssue -> Allowed to Link Issue",
 			action:             InherentLinkOwnIssue,
 			isAuthorOrReporter: true,
-			granted:            map[string]bool{PermCreateIssue: true},
+			granted:            map[PermKey]bool{PermCreateIssue: true},
 			expectedResult:     true,
 		},
 		// 3. File Attachments
@@ -274,21 +274,21 @@ func TestInherentPermissions_ComprehensiveMatrix(t *testing.T) {
 			name:               "Attacher with AddAttachment -> Allowed to Modify Attachment",
 			action:             InherentModifyOwnAttachment,
 			isAuthorOrReporter: true,
-			granted:            map[string]bool{PermAddAttachment: true},
+			granted:            map[PermKey]bool{PermAddAttachment: true},
 			expectedResult:     true,
 		},
 		{
 			name:               "Attacher WITHOUT AddAttachment -> Denied Modify Attachment",
 			action:             InherentModifyOwnAttachment,
 			isAuthorOrReporter: true,
-			granted:            map[string]bool{},
+			granted:            map[PermKey]bool{},
 			expectedResult:     false,
 		},
 		{
 			name:               "Attacher -> Always Allowed to Delete Own Attachment Even with Zero Permissions",
 			action:             InherentDeleteOwnAttachment,
 			isAuthorOrReporter: true,
-			granted:            map[string]bool{}, // ZERO permissions!
+			granted:            map[PermKey]bool{}, // ZERO permissions!
 			expectedResult:     true,
 			description:        "YouTrack Privacy guarantee: Users can always delete files they uploaded themselves",
 		},
@@ -296,7 +296,7 @@ func TestInherentPermissions_ComprehensiveMatrix(t *testing.T) {
 			name:               "Non-Attacher -> Denied Delete Attachment via Inherent Check",
 			action:             InherentDeleteOwnAttachment,
 			isAuthorOrReporter: false,
-			granted:            map[string]bool{},
+			granted:            map[PermKey]bool{},
 			expectedResult:     false,
 		},
 		// 4. Work Items & Comments
@@ -304,14 +304,14 @@ func TestInherentPermissions_ComprehensiveMatrix(t *testing.T) {
 			name:               "Work Item Creator with CreateWorkItem -> Allowed to Read Own Work Item",
 			action:             InherentReadOwnWorkItem,
 			isAuthorOrReporter: true,
-			granted:            map[string]bool{PermCreateWorkItem: true},
+			granted:            map[PermKey]bool{PermCreateWorkItem: true},
 			expectedResult:     true,
 		},
 		{
 			name:               "Article Comment Creator with CreateArticleComment -> Allowed to Delete Own Article Comment",
 			action:             InherentDeleteOwnArticleComment,
 			isAuthorOrReporter: true,
-			granted:            map[string]bool{PermCreateArticleComment: true},
+			granted:            map[PermKey]bool{PermCreateArticleComment: true},
 			expectedResult:     true,
 		},
 		// 5. Strict Prohibition: Deleting Own Issues
@@ -319,7 +319,7 @@ func TestInherentPermissions_ComprehensiveMatrix(t *testing.T) {
 			name:               "Reporter trying to Delete Own Issue inherently -> Strictly PROHIBITED",
 			action:             InherentAction("DELETE_OWN_ISSUE"),
 			isAuthorOrReporter: true,
-			granted:            map[string]bool{PermCreateIssue: true, PermReadIssue: true, PermUpdateIssue: true},
+			granted:            map[PermKey]bool{PermCreateIssue: true, PermReadIssue: true, PermUpdateIssue: true},
 			expectedResult:     false,
 			description:        "YouTrack strictly forbids deleting issues via inherent rights",
 		},
@@ -327,7 +327,7 @@ func TestInherentPermissions_ComprehensiveMatrix(t *testing.T) {
 
 	for _, tc := range testMatrix {
 		t.Run(tc.name, func(t *testing.T) {
-			hasPerm := func(id string) bool {
+			hasPerm := func(id PermKey) bool {
 				return tc.granted[id]
 			}
 
@@ -360,13 +360,13 @@ func TestConcurrentAccessAndThreadSafety(t *testing.T) {
 				idx := (workerID + i) % len(allPerms)
 				targetID := allPerms[idx].ID
 
-				p, ok := svc.GetPermission(targetID)
-				if !ok || p.ID != targetID {
+				p := svc.GetPermission(targetID)
+				if p == nil || p.ID != targetID {
 					t.Errorf("worker %d: expected to find permission %s", workerID, targetID)
 				}
 
 				// Concurrent Implied Resolution
-				implied := svc.ResolveImplied([]string{targetID})
+				implied := svc.ResolveImplied([]PermKey{targetID})
 				if len(implied) == 0 {
 					t.Errorf("worker %d: implied resolution produced empty set for %s", workerID, targetID)
 				}
@@ -382,14 +382,14 @@ func TestConcurrentAccessAndThreadSafety(t *testing.T) {
 				// Concurrent Scope Filtering
 				scoped := svc.ValidatePermissionsForScope(implied, ScopeProject)
 				for _, sc := range scoped {
-					perm, _ := svc.GetPermission(sc)
+					perm := svc.GetPermission(sc)
 					if perm.Scope != ScopeProject {
 						t.Errorf("worker %d: non-project perm %s leaked", workerID, sc)
 					}
 				}
 
 				// Concurrent Inherent Access Check
-				_ = svc.CheckInherentAccess(InherentDeleteOwnAttachment, true, func(string) bool { return false })
+				_ = svc.CheckInherentAccess(InherentDeleteOwnAttachment, true, func(PermKey) bool { return false })
 			}
 		}(w)
 	}
@@ -401,7 +401,7 @@ func TestConcurrentAccessAndThreadSafety(t *testing.T) {
 
 func BenchmarkResolveImplied(b *testing.B) {
 	svc := NewService()
-	input := []string{PermUpdateProject, PermUpdateIssuePrivateFields, PermUpdateUser}
+	input := []PermKey{PermUpdateProject, PermUpdateIssuePrivateFields, PermUpdateUser}
 
 	for b.Loop() {
 		_ = svc.ResolveImplied(input)
@@ -410,7 +410,7 @@ func BenchmarkResolveImplied(b *testing.B) {
 
 func BenchmarkResolveRevocation(b *testing.B) {
 	svc := NewService()
-	active := svc.ResolveImplied([]string{PermUpdateProject, PermUpdateIssuePrivateFields})
+	active := svc.ResolveImplied([]PermKey{PermUpdateProject, PermUpdateIssuePrivateFields})
 
 	for b.Loop() {
 		_ = svc.ResolveRevocation(active, PermReadProjectBasic)
@@ -420,7 +420,7 @@ func BenchmarkResolveRevocation(b *testing.B) {
 func BenchmarkValidatePermissionsForScope(b *testing.B) {
 	svc := NewService()
 	allPerms := svc.GetAllPermissions()
-	ids := make([]string, len(allPerms))
+	ids := make([]PermKey, len(allPerms))
 	for i, p := range allPerms {
 		ids[i] = p.ID
 	}
@@ -432,7 +432,7 @@ func BenchmarkValidatePermissionsForScope(b *testing.B) {
 
 func BenchmarkCheckInherentAccess(b *testing.B) {
 	svc := NewService()
-	hasPerm := func(id string) bool { return id == PermCreateIssue }
+	hasPerm := func(id PermKey) bool { return id == PermCreateIssue }
 
 	for b.Loop() {
 		_ = svc.CheckInherentAccess(InherentReadOwnIssuePublicFields, true, hasPerm)

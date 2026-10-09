@@ -39,18 +39,18 @@ func TestResolveImplied(t *testing.T) {
 
 	tests := []struct {
 		name     string
-		input    []string
-		expected []string
+		input    []PermKey
+		expected []PermKey
 	}{
 		{
 			name:     "Create Issue implies Read Project Basic",
-			input:    []string{PermCreateIssue},
-			expected: []string{PermCreateIssue, PermReadProjectBasic}, // CREATE_ISSUE < READ_PROJECT_BASIC
+			input:    []PermKey{PermCreateIssue},
+			expected: []PermKey{PermCreateIssue, PermReadProjectBasic}, // CREATE_ISSUE < READ_PROJECT_BASIC
 		},
 		{
 			name:  "Update User implies Update Profile, Read User Details, and Read User Basic",
-			input: []string{PermUpdateUser},
-			expected: []string{
+			input: []PermKey{PermUpdateUser},
+			expected: []PermKey{
 				PermReadUserDetails, // READ_USER
 				PermReadUserBasic,   // READ_USER_BASIC
 				PermUpdateSelf,      // UPDATE_PROFILE
@@ -59,8 +59,8 @@ func TestResolveImplied(t *testing.T) {
 		},
 		{
 			name:  "Update Issue Private Fields implies Read Issue Private Fields, Update Issue, and Read Project Basic",
-			input: []string{PermUpdateIssuePrivateFields},
-			expected: []string{
+			input: []PermKey{PermUpdateIssuePrivateFields},
+			expected: []PermKey{
 				PermReadIssuePrivateFields,   // PRIVATE_READ_ISSUE
 				PermUpdateIssuePrivateFields, // PRIVATE_UPDATE_ISSUE
 				PermReadProjectBasic,         // READ_PROJECT_BASIC
@@ -69,8 +69,8 @@ func TestResolveImplied(t *testing.T) {
 		},
 		{
 			name:  "Update Project implies Read Project Full and Read Project Basic",
-			input: []string{PermUpdateProject},
-			expected: []string{
+			input: []PermKey{PermUpdateProject},
+			expected: []PermKey{
 				PermReadProjectFull,  // READ_PROJECT
 				PermReadProjectBasic, // READ_PROJECT_BASIC
 				PermUpdateProject,    // UPDATE_PROJECT
@@ -98,7 +98,7 @@ func TestResolveRevocation(t *testing.T) {
 
 	// Initial set includes UpdateProject (which implies ReadProjectFull and ReadProjectBasic)
 	// and CreateIssue (which implies ReadProjectBasic)
-	active := svc.ResolveImplied([]string{PermUpdateProject, PermCreateIssue})
+	active := svc.ResolveImplied([]PermKey{PermUpdateProject, PermCreateIssue})
 
 	// Revoke ReadProjectBasic
 	remaining := svc.ResolveRevocation(active, PermReadProjectBasic)
@@ -119,7 +119,7 @@ func TestResolveRevocation(t *testing.T) {
 func TestValidatePermissionsForScope(t *testing.T) {
 	svc := NewService()
 
-	mix := []string{
+	mix := []PermKey{
 		PermCreateUser,         // Global
 		PermCreateOrganization, // Global
 		PermUpdateOrganization, // Organization
@@ -160,13 +160,13 @@ func TestValidatePermissionsForScope(t *testing.T) {
 func TestInherentPermissions(t *testing.T) {
 	svc := NewService()
 
-	mockPerms := map[string]bool{
+	mockPerms := map[PermKey]bool{
 		PermCreateIssue:          true,
 		PermAddAttachment:        true,
 		PermCreateIssueComment:   true,
 		PermCreateArticleComment: true,
 	}
-	hasPerm := func(id string) bool {
+	hasPerm := func(id PermKey) bool {
 		return mockPerms[id]
 	}
 

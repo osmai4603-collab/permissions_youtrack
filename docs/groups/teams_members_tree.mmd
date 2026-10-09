@@ -1,0 +1,17 @@
+%% Snapshot queried from the local database: all groups with group_type = 'TEAM'
+%% and their recursive memberships from group_members.
+%% This snapshot contains four teams and five direct USER memberships; there are no GROUP memberships.
+flowchart TD
+    t1a["TEAM: T1A team"] --> t1a_user1["USER: Test One"]
+
+    t1b["TEAM: T1B team"] --> t1b_user1["USER: Test One"]
+    t1b --> t1b_user2["USER: Test Three"]
+
+    t2a["TEAM: T2A team"] --> t2a_user1["USER: Test Two"]
+
+    t2b["TEAM: T2B team"] --> t2b_user1["USER: Test Two"]
+
+    classDef team fill:#D1FAE5,stroke:#047857,stroke-width:2px,color:#064E3B
+    classDef user fill:#F4F4F4,stroke:#666,color:#222
+    class t1a,t1b,t2a,t2b team
+    class t1a_user1,t1b_user1,t1b_user2,t2a_user1,t2b_user1 user
