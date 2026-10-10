@@ -1,0 +1,206 @@
+flowchart TB
+
+    %% =========================================================================
+    %% إعدادات التنسيق والألوان العامة للطبقات (Theme & Hierarchy Styling)
+    %% تصميم مستوحى 100% من نمط read_project_basic_layers.mmd
+    %% =========================================================================
+    classDef layer0 fill:#1E1B4B,stroke:#6366F1,stroke-width:3px,color:#FFFFFF,font-weight:bold;
+    classDef layer1 fill:#064E3B,stroke:#10B981,stroke-width:2.5px,color:#FFFFFF,font-weight:bold;
+    classDef layer2 fill:#78350F,stroke:#F59E0B,stroke-width:2px,color:#FFFFFF,font-weight:bold;
+    classDef layer3 fill:#4A044E,stroke:#E879F9,stroke-width:2px,color:#FFFFFF,font-weight:bold;
+    classDef layerArticle fill:#581C87,stroke:#A855F7,stroke-width:2px,color:#FFFFFF,font-weight:bold;
+    classDef layerComment fill:#4A044E,stroke:#E879F9,stroke-width:2px,color:#FFFFFF,font-weight:bold;
+    classDef standalone fill:#1F2937,stroke:#6B7280,stroke-width:2px,color:#F3F4F6,font-weight:bold;
+
+    %% =========================================================================
+    %% الطبقة 0: الجذور التأسيسية والصلاحيات المستقلة (Layer 0 - Core Foundation Roots & Standalone)
+    %% الصلاحيات القاعدية التي تبنى عليها كل الاعتماديات + الصلاحيات ذاتية الاكتفاء
+    %% =========================================================================
+    subgraph L0 ["الطبقة 0: الصلاحيات التأسيسية والمستقلة (Layer 0: Core Foundation Roots & Standalone)"]
+        direction TB
+
+        subgraph L0_SYS ["جذور النظام والتطبيقات"]
+            ADMIN_READ_APP["ADMIN_READ_APP<br/><b>Low-level Admin Read</b><br/><i>(جذر قراءة إعدادات النظام)</i>"]:::layer0
+            READ_APP_CONTENT["READ_APP_CONTENT<br/><b>Read App Content</b><br/><i>(جذر استعراض محتوى التطبيقات)</i>"]:::layer0
+        end
+
+        subgraph L0_ORG ["جذر المؤسسات"]
+            READ_ORGANIZATION["READ_ORGANIZATION<br/><b>Read Organization</b><br/><i>(جذر استعراض المؤسسات)</i>"]:::layer0
+        end
+
+        subgraph L0_USER ["جذور المستخدمين الذاتية والأساسية"]
+            READ_USER_BASIC["READ_USER_BASIC<br/><b>Read User Basic</b><br/><i>(جذر هوية المستخدمين الأساسية)</i>"]:::layer0
+            UPDATE_PROFILE["UPDATE_PROFILE<br/><b>Update Self</b><br/><i>(جذر تعديل الملف الشخصي الذاتي)</i>"]:::layer0
+        end
+
+        subgraph L0_PROJ ["الجذور المركزية للمشاريع والتذاكر"]
+            READ_PROJECT_BASIC["READ_PROJECT_BASIC<br/><b>Read Project Basic</b><br/><i>(الجذر الأكبر لكافة عمليات المشاريع)</i>"]:::layer0
+            UPDATE_ISSUE["UPDATE_ISSUE<br/><b>Update Issue</b><br/><i>(جذر تعديل الحقول القياسية)</i>"]:::layer0
+        end
+
+        subgraph L0_INTERACTION ["جذور التفاعلات وسجلات العمل الذاتية"]
+            READ_COMMENT["READ_COMMENT<br/><b>Read Issue Comment</b><br/><i>(جذر استعراض التعليقات)</i>"]:::layer0
+            CREATE_WORK_ITEM["CREATE_WORK_ITEM<br/><b>Create Work Item</b><br/><i>(جذر تسجيل الوقت الذاتي)</i>"]:::layer0
+            READ_WORK_ITEM["READ_WORK_ITEM<br/><b>Read Work Item</b><br/><i>(جذر استعراض سجلات العمل)</i>"]:::layer0
+            UPDATE_WORK_ITEM["UPDATE_WORK_ITEM<br/><b>Update Work Item</b><br/><i>(جذر تعديل وقت العمل الذاتي)</i>"]:::layer0
+        end
+
+        subgraph L0_STANDALONE ["صلاحيات مستقلة بدون اعتماديات (Standalone - 0 Dependents)"]
+            CREATE_USER["CREATE_USER<br/><b>Create User</b>"]:::standalone
+            CREATE_PROJECT["CREATE_PROJECT<br/><b>Create Project</b>"]:::standalone
+            DELETE_ISSUE["DELETE_ISSUE<br/><b>Delete Issue</b>"]:::standalone
+            LINK_ISSUE["LINK_ISSUE<br/><b>Link Issues</b>"]:::standalone
+            UPDATE_WATCHERS["UPDATE_WATCHERS<br/><b>Update Watchers</b>"]:::standalone
+            APPLY_COMMANDS_SILENTLY["APPLY_COMMANDS_SILENTLY<br/><b>Silent Commands</b>"]:::standalone
+            CREATE_ATTACHMENT_ISSUE["CREATE_ATTACHMENT_ISSUE<br/><b>Add Attachment</b>"]:::standalone
+            UPDATE_ATTACHMENT_ISSUE["UPDATE_ATTACHMENT_ISSUE<br/><b>Update Attachment</b>"]:::standalone
+            DELETE_ATTACHMENT_ISSUE["DELETE_ATTACHMENT_ISSUE<br/><b>Delete Attachment</b>"]:::standalone
+            CREATE_COMMENT["CREATE_COMMENT<br/><b>Create Comment</b>"]:::standalone
+            UPDATE_COMMENT["UPDATE_COMMENT<br/><b>Update Comment</b>"]:::standalone
+            DELETE_COMMENT["DELETE_COMMENT<br/><b>Delete Comment</b>"]:::standalone
+            CREATE_WATCH_FOLDER["CREATE_WATCH_FOLDER<br/><b>Create Tag/Search</b>"]:::standalone
+            UPDATE_WATCH_FOLDER["UPDATE_WATCH_FOLDER<br/><b>Edit Tag/Search</b>"]:::standalone
+            DELETE_WATCH_FOLDER["DELETE_WATCH_FOLDER<br/><b>Delete Tag/Search</b>"]:::standalone
+            SHARE_WATCH_FOLDER["SHARE_WATCH_FOLDER<br/><b>Share Custom View</b>"]:::standalone
+        end
+    end
+
+    %% =========================================================================
+    %% الطبقة 1: الاعتماديات المباشرة - الدرجة الأولى (Layer 1 - Direct Dependents)
+    %% تسقط مباشرة عند سحب أي صلاحية جذرية مرتبطة بها من الطبقة 0
+    %% =========================================================================
+    subgraph L1 ["الطبقة 1: الاعتماديات المباشرة في الكود والوثائق (Direct Dependents - 1st Degree)"]
+        direction TB
+
+        subgraph L1_ADMIN ["إدارة النظام والمحتوى والمؤسسات"]
+            ADMIN_UPDATE_APP["ADMIN_UPDATE_APP<br/><b>Low-level Admin Write</b>"]:::layer1
+            UPDATE_APP_CONTENT["UPDATE_APP_CONTENT<br/><b>Update App Content</b>"]:::layer1
+            CREATE_ORGANIZATION["CREATE_ORGANIZATION<br/><b>Create Organization</b>"]:::layer1
+            UPDATE_ORGANIZATION["UPDATE_ORGANIZATION<br/><b>Update Organization</b>"]:::layer1
+            DELETE_ORGANIZATION["DELETE_ORGANIZATION<br/><b>Delete Organization</b>"]:::layer1
+        end
+
+        subgraph L1_USERS ["تفاصيل المستخدمين"]
+            READ_USER["READ_USER<br/><b>Read User Details</b>"]:::layer1
+        end
+
+        subgraph L1_PROJ_CORE ["عمليات التذاكر والمشاريع الأساسية"]
+            READ_PROJECT["READ_PROJECT<br/><b>Read Project Full</b>"]:::layer1
+            CREATE_ISSUE["CREATE_ISSUE<br/><b>Create Issue</b>"]:::layer1
+            READ_ISSUE["READ_ISSUE<br/><b>Read Issue</b>"]:::layer1
+            PRIVATE_READ_ISSUE["PRIVATE_READ_ISSUE<br/><b>Read Private Fields</b>"]:::layer1
+            VIEW_VOTERS["VIEW_VOTERS<br/><b>View Voters</b>"]:::layer1
+            VIEW_WATCHERS["VIEW_WATCHERS<br/><b>View Watchers</b>"]:::layer1
+        end
+
+        subgraph L1_DOCS ["مسار المعرفة (في الوثائق الرسمية)"]
+            READ_ARTICLE["READ_ARTICLE<br/><b>Read Article</b><br/><i>(مشروط بـ Read Project Basic)</i>"]:::layerArticle
+        end
+
+        subgraph L1_INTERACTION ["إدارة تعليقات وبنود عمل الآخرين"]
+            UPDATE_NOT_OWN_COMMENT["UPDATE_NOT_OWN_COMMENT<br/><b>Update Other Comment</b>"]:::layer1
+            DELETE_NOT_OWN_COMMENT["DELETE_NOT_OWN_COMMENT<br/><b>Delete Other Comment</b>"]:::layer1
+            CREATE_NOT_OWN_WORK_ITEM["CREATE_NOT_OWN_WORK_ITEM<br/><b>Create Other Work Item</b>"]:::layer1
+            UPDATE_NOT_OWN_WORK_ITEM["UPDATE_NOT_OWN_WORK_ITEM<br/><b>Update Other Work Item</b>"]:::layer1
+        end
+    end
+
+    %% =========================================================================
+    %% الطبقة 2: الاعتماديات المتعدية - الدرجة الثانية (Layer 2 - Transitive Dependents)
+    %% تعتمد على صلاحيات الطبقة 1، وتسقط متعدياً بسقوط الطبقة 0
+    %% =========================================================================
+    subgraph L2 ["الطبقة 2: الاعتماديات المتعدية - الدرجة الثانية (Transitive Dependents - 2nd Degree)"]
+        direction TB
+
+        subgraph L2_USERS ["إدارة وتعديل وحذف المستخدمين"]
+            UPDATE_USER["UPDATE_USER<br/><b>Update User</b>"]:::layer2
+            DELETE_USER["DELETE_USER<br/><b>Delete User</b>"]:::layer2
+        end
+
+        subgraph L2_PROJ_MGMT ["إدارة وتعديل وحذف المشروع"]
+            UPDATE_PROJECT["UPDATE_PROJECT<br/><b>Update Project</b>"]:::layer2
+            DELETE_PROJECT["DELETE_PROJECT<br/><b>Delete Project</b>"]:::layer2
+        end
+
+        subgraph L2_ISSUE_PRIV ["الحقول والقيود الخاصة بالتذاكر"]
+            READ_HIDDEN_STUFF["READ_HIDDEN_STUFF<br/><b>Override Visibility</b>"]:::layer2
+            PRIVATE_UPDATE_ISSUE["PRIVATE_UPDATE_ISSUE<br/><b>Update Private Fields</b>"]:::layer2
+        end
+
+        subgraph L2_ARTICLE_OPS ["عمليات مقالات قاعدة المعرفة"]
+            CREATE_ARTICLE["CREATE_ARTICLE<br/><b>Create Article</b>"]:::layerArticle
+            UPDATE_ARTICLE["UPDATE_ARTICLE<br/><b>Update Article</b>"]:::layerArticle
+            DELETE_ARTICLE["DELETE_ARTICLE<br/><b>Delete Article</b>"]:::layerArticle
+            READ_ARTICLE_COMMENT["READ_ARTICLE_COMMENT<br/><b>Read Article Comment</b>"]:::layerArticle
+        end
+    end
+
+    %% =========================================================================
+    %% الطبقة 3: الاعتماديات المتعدية - الدرجة الثالثة (Layer 3 - Tertiary Dependents)
+    %% أعلى درجات التبعية المتعدية (تعليقات مقالات قاعدة المعرفة)
+    %% =========================================================================
+    subgraph L3 ["الطبقة 3: الاعتماديات المتعدية - الدرجة الثالثة (Transitive Dependents - 3rd Degree)"]
+        subgraph L3_COMMENTS ["عمليات تعليقات المقالات"]
+            CREATE_ARTICLE_COMMENT["CREATE_ARTICLE_COMMENT<br/><b>Create Article Comment</b>"]:::layerComment
+            UPDATE_ARTICLE_COMMENT["UPDATE_ARTICLE_COMMENT<br/><b>Update Article Comment</b>"]:::layerComment
+            DELETE_ARTICLE_COMMENT["DELETE_ARTICLE_COMMENT<br/><b>Delete Article Comment</b>"]:::layerComment
+        end
+    end
+
+    %% =========================================================================
+    %% روابط تدفق الاعتمادية من الطبقة 0 إلى الطبقة 1 (Dependency Flow: L0 -> L1)
+    %% سحب عقدة من الطبقة 0 يسقط مباشرة كل ما تعتمد عليها في الطبقة 1
+    %% =========================================================================
+    ADMIN_READ_APP --> ADMIN_UPDATE_APP
+    READ_APP_CONTENT --> UPDATE_APP_CONTENT
+
+    READ_ORGANIZATION --> CREATE_ORGANIZATION
+    READ_ORGANIZATION --> UPDATE_ORGANIZATION
+    READ_ORGANIZATION --> DELETE_ORGANIZATION
+
+    READ_USER_BASIC --> READ_USER
+
+    READ_COMMENT --> UPDATE_NOT_OWN_COMMENT
+    READ_COMMENT --> DELETE_NOT_OWN_COMMENT
+
+    CREATE_WORK_ITEM --> CREATE_NOT_OWN_WORK_ITEM
+    READ_WORK_ITEM --> UPDATE_NOT_OWN_WORK_ITEM
+    UPDATE_WORK_ITEM --> UPDATE_NOT_OWN_WORK_ITEM
+
+    READ_PROJECT_BASIC --> READ_PROJECT
+    READ_PROJECT_BASIC --> CREATE_ISSUE
+    READ_PROJECT_BASIC --> READ_ISSUE
+    READ_PROJECT_BASIC --> PRIVATE_READ_ISSUE
+    READ_PROJECT_BASIC --> VIEW_VOTERS
+    READ_PROJECT_BASIC --> VIEW_WATCHERS
+
+    %% الرابط السياقي لمقالات قاعدة المعرفة في الوثائق الرسمية
+    READ_PROJECT_BASIC -.-> READ_ARTICLE
+
+    %% =========================================================================
+    %% روابط تدفق الاعتمادية من الطبقة 1 إلى الطبقة 2 (Dependency Flow: L1 -> L2)
+    %% سحب عقدة من الطبقة 1 يسقط متعدياً العقد في الطبقة 2
+    %% =========================================================================
+    READ_USER --> UPDATE_USER
+    UPDATE_PROFILE --> UPDATE_USER
+    READ_USER --> DELETE_USER
+
+    READ_PROJECT --> UPDATE_PROJECT
+    READ_PROJECT --> DELETE_PROJECT
+
+    PRIVATE_READ_ISSUE --> READ_HIDDEN_STUFF
+    PRIVATE_READ_ISSUE --> PRIVATE_UPDATE_ISSUE
+    UPDATE_ISSUE --> PRIVATE_UPDATE_ISSUE
+
+    READ_ARTICLE -.-> CREATE_ARTICLE
+    READ_ARTICLE -.-> UPDATE_ARTICLE
+    READ_ARTICLE -.-> DELETE_ARTICLE
+    READ_ARTICLE -.-> READ_ARTICLE_COMMENT
+
+    %% =========================================================================
+    %% روابط تدفق الاعتمادية من الطبقة 2 إلى الطبقة 3 (Dependency Flow: L2 -> L3)
+    %% سحب عقدة تعليقات المقالات يسقط عمليات إنشاء وتعديل وحذف تعليقات المقال
+    %% =========================================================================
+    READ_ARTICLE_COMMENT -.-> CREATE_ARTICLE_COMMENT
+    READ_ARTICLE_COMMENT -.-> UPDATE_ARTICLE_COMMENT
+    READ_ARTICLE_COMMENT -.-> DELETE_ARTICLE_COMMENT

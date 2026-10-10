@@ -1,205 +1,146 @@
 %% =========================================================================
 %% YouTrack Permissions — مخطط علاقات قاعدة البيانات (ERD)
-%% Database Entity-Relationship Diagram
+%% Database Entity-Relationship Diagram (Migrations 000001 to 000006)
 %% =========================================================================
-%% المصادر / Sources:
-%%   migrations/000001_roles.sql
-%%   migrations/000002_users.sql
-%%   migrations/000003_groups.sql
-%%   migrations/000004_projects.sql
-%%   migrations/000005_assigned_roles.sql
-%%   customer_group_project.sql
-%% =========================================================================
-%% مفتاح قراءة المخطط:
-%%   ||  واحد فقط (exactly one)    |  صفر أو واحد (zero or one)
-%%   }  كثير (many)                 o  واحد أو كثير (zero or many)
-%%   PK مفتاح أساسي   UK قيد تفرد   FK مفتاح أجنبي
-%%   ||--||  واحد لواحد (shared primary key)
+%% تم تحسين الترتيب والتوزيع البصري لتقليل تقاطع الخطوط وتسهيل القراءة
+%% وفق التسلسل الهرمي للكيانات:
+%%   المستوى 1: الكيانات الأساسية (Organizations, Users, Roles)
+%%   المستوى 2: الحاويات والمشاريع (Groups, Projects)
+%%   المستوى 3: جداول الوصل والربط (Group Members, Assigned Roles)
 %% =========================================================================
 
 erDiagram
 
     %% =====================================================================
-    %% 1. الحسابات والمستخدمون (Identities)
-    %% =====================================================================
-
-    users {
-        varchar   id                     PK "مفتاح أساسي"
-        varchar   login                  UK "NOT NULL — اسم الدخول"
-        varchar   email                     "فهرس idx_users_email"
-        varchar   full_name                   "الاسم الكامل"
-        varchar   name                        "الاسم المختصر"
-        text      avatar_url                   "رابط الصورة الرمزية"
-        boolean   banned                "NOT NULL — محظور"
-        boolean   online                "NOT NULL — متصل حالياً"
-        boolean   guest                      "حساب ضيف"
-        user_type type                       "AGENT | STANDARD_USER | REPORTER"
-        varchar   hub_id                        "معرّف Hub الدائم"
-        varchar   ring_id                       "معرّف Ring الدائم"
-        timestamptz last_login_time             "آخر تسجيل دخول"
-        timestamptz creation_time               "وقت الإنشاء في YouTrack"
-        timestamptz update_time                 "آخر تحديث في YouTrack"
-        boolean   is_anonymized           "NOT NULL — بيانات مجهولة الهوية"
-        text      ban_reason                    "سبب الحظر"
-        text      hash_password                 "كلمة المرور مشفّرة bcrypt (pgcrypto)"
-        timestamptz created_at                 "طابع تدقيق داخلي"
-        timestamptz updated_at                 "طابع تدقيق داخلي"
-    }
-
-    %% =====================================================================
-    %% 2. الأدوار (Roles)
-    %% =====================================================================
-
-    roles {
-        varchar     id             PK "مفتاح أساسي"
-        varchar     name           UK "NOT NULL — فهرس idx_roles_name"
-        text        description       "وصف الدور"
-        text_array  permissions       "قائمة الصلاحيات الممنوحة"
-        boolean     built_in        "NOT NULL — دور مدمج في YouTrack"
-        timestamptz created_at         "طابع تدقيق داخلي"
-        timestamptz updated_at         "طابع تدقيق داخلي"
-    }
-
-    %% =====================================================================
-    %% 3. مجموعات المستخدمين (User Groups)
-    %% =====================================================================
-
-    groups {
-        varchar   id                    PK "مفتاح أساسي"
-        varchar   name                  UK "NOT NULL — فهرس idx_groups_name"
-        text      description               "الوصف المعروض"
-        varchar   parent_group_id       FK "مرجع ذاتي — بلا ON DELETE أي = RESTRICT"
-        bigint    users_count           "NOT NULL — عدّاد مُشتق (denormalized)"
-        text      icon                      "رابط شعار المجموعة"
-        boolean   all_users_group        "NOT NULL — مجموعة All Users"
-        boolean   registered_users_group "NOT NULL — مجموعة Registered Users"
-        boolean   is_customer_group      "NOT NULL — مجموعة عملاء مركز مساعدة"
-        boolean   auto_join              "NOT NULL — ضمّ تلقائي"
-        varchar   auto_join_domain          "نطاق البريد للضمّ التلقائي"
-        boolean   require_two_factor_authentication "NOT NULL — إلزام 2FA"
-        timestamptz created_at             "طابع تدقيق داخلي"
-        timestamptz updated_at             "طابع تدقيق داخلي"
-    }
-
-    %% =====================================================================
-    %% 4. عضوية المجموعات (Group Membership)
-    %% =====================================================================
-
-    group_members {
-        varchar     group_id   PK "جزء من المفتاح الأساسي + FK"
-        varchar     user_id    PK "جزء من المفتاح الأساسي + FK"
-        timestamptz created_at    "طابع تدقيق داخلي"
-    }
-
-    %% =====================================================================
-    %% 5. صلاحيات رؤية/تعديل المجموعات (Visible to / Updatable by)
-    %% =====================================================================
-
-    group_visibility {
-        varchar    group_id          FK "المجموعة المُقيَّدة — NOT NULL"
-        group_visibility_setting setting "NOT NULL — VISIBLE_TO | UPDATABLE_BY"
-        varchar    user_id           FK "الهدف: حساب مستخدم"
-        varchar    target_group_id   FK "الهدف: مجموعة"
-        timestamptz created_at           "طابع تدقيق داخلي"
-    }
-
-    %% =====================================================================
-    %% 6. المؤسسات والمشاريع (Organizations & Projects)
+    %% المستوى 1: الكيانات الأساسية المستقلة (Core Master Entities)
     %% =====================================================================
 
     organizations {
-        varchar     id          PK "مفتاح أساسي"
-        varchar     key         UK "NOT NULL — فهرس idx_organizations_key"
-        varchar     name           "NOT NULL — فهرس idx_organizations_name"
-        text        description     "وصف المؤسسة (يقبل NULL)"
-        text        icon_url        "رابط الأيقونة (للقراءة فقط)"
-        timestamptz created_at      "طابع تدقيق داخلي"
-        timestamptz updated_at      "طابع تدقيق داخلي"
+        varchar     id          PK "مفتاح أساسي (UUID)"
+        varchar     key         UK "NOT NULL — مفتاح المؤسسة الفريد"
+        varchar     name           "NOT NULL — اسم المؤسسة"
+        text        description    "وصف المؤسسة"
+        text        icon_url       "رابط الأيقونة"
+        timestamptz created_at     "طابع تدقيق داخلي"
+        timestamptz updated_at     "طابع تدقيق داخلي"
     }
 
-    projects {
-        varchar     id              PK "مفتاح أساسي"
-        varchar     name                "NOT NULL — فهرس idx_projects_name"
-        varchar     short_name       UK "NOT NULL — بادئة معرّف التذكرة"
-        boolean     archived         "NOT NULL — مشروع مؤرشف"
-        boolean     template         "NOT NULL — مشروع قالب"
-        text        description          "وصف المشروع (يقبل NULL)"
-        varchar     organization_id FK "→ organizations.id — ON DELETE SET NULL"
-        varchar     created_by      FK "→ users.id — ON DELETE SET NULL"
-        varchar     leader_id       FK "→ users.id — مالك المشروع — ON DELETE SET NULL"
-        varchar     from_email           "بريد إرسال الإشعارات"
-        varchar     reply_to_email       "بريد الرد على الإشعارات"
-        text        icon_url              "رابط الأيقونة (للقراءة فقط)"
-        bigint      starting_number       "رقم البداية (يُضبط عند الإنشاء فقط)"
+    users {
+        varchar     id                PK "مفتاح أساسي (UUID)"
+        varchar     login             UK "NOT NULL — اسم تسجيل الدخول"
+        varchar     email                "البريد الإلكتروني"
+        varchar     full_name            "الاسم الكامل"
+        varchar     name                 "الاسم المعروض/المختصر"
+        text        avatar_url           "رابط الصورة الرمزية"
+        boolean     banned            "NOT NULL DEFAULT FALSE — محظور"
+        boolean     online            "NOT NULL DEFAULT FALSE — متصل حالياً"
+        boolean     guest                "حساب ضيف"
+        user_type   type                 "AGENT | STANDARD_USER | REPORTER"
+        varchar     hub_id               "معرّف Hub"
+        varchar     ring_id              "معرّف Ring"
+        timestamptz last_login_time      "آخر تسجيل دخول"
+        timestamptz creation_time        "وقت الإنشاء في YouTrack"
+        timestamptz update_time          "آخر تحديث في YouTrack"
+        boolean     is_anonymized     "NOT NULL DEFAULT FALSE — بيانات مجهولة"
+        text        ban_reason           "سبب الحظر"
+        text        hash_password        "كلمة المرور مشفرة bcrypt"
         timestamptz created_at           "طابع تدقيق داخلي"
         timestamptz updated_at           "طابع تدقيق داخلي"
     }
 
-    project_teams {
-        varchar id         PK "مفتاح أساسي"
-        varchar name          "NOT NULL — اسم الفريق"
-        varchar project_id UK "FK → projects.id — قيد تفرد مريب انظر الملاحظات"
+    roles {
+        varchar    id          PK "مفتاح أساسي (معرّف نصي أو UUID)"
+        varchar    name        UK "NOT NULL — اسم الدور الفريد"
+        text       description    "وصف الدور"
+        text_array permissions    "مصفوفة الصلاحيات الممنوحة TEXT[]"
+        boolean    immutable   "NOT NULL DEFAULT FALSE — دور نظام ثابت"
     }
 
     %% =====================================================================
-    %% 7. الأدوار المعطاة (Assigned Roles) — جدول الوصل المركزي
+    %% المستوى 2: الحاويات، فرق العمل، والمشاريع (Containers & Projects)
     %% =====================================================================
+
+    groups {
+        varchar     id                     PK "مفتاح أساسي (UUID)"
+        varchar     name                   UK "NOT NULL — اسم المجموعة أو الفريق"
+        text        description               "الوصف المعروض"
+        varchar     group_type                "DEFAULT 'GROUP' — GROUP | TEAM"
+        varchar     parent_group_id        FK "مرجع ذاتي → groups.id"
+        bigint      users_count            "NOT NULL DEFAULT 0 — عدّاد الأعضاء"
+        text        icon                      "رابط أيقونة المجموعة"
+        boolean     all_users_group        "NOT NULL DEFAULT FALSE — مجموعة الكل"
+        boolean     registered_users_group "NOT NULL DEFAULT FALSE — مجموعة المسجلين"
+        boolean     auto_join              "NOT NULL DEFAULT FALSE — انضمام تلقائي"
+        timestamptz created_at                "DEFAULT NOW() — وقت الإنشاء"
+        timestamptz updated_at                "DEFAULT NOW() — وقت التحديث"
+    }
+
+    projects {
+        varchar     id              PK "مفتاح أساسي (UUID)"
+        varchar     name               "NOT NULL — اسم المشروع"
+        varchar     short_name      UK "NOT NULL — بادئة معرف التذاكر"
+        boolean     archived        "NOT NULL DEFAULT FALSE — مشروع مؤرشف"
+        boolean     template        "NOT NULL DEFAULT FALSE — مشروع قالب"
+        text        description         "وصف المشروع"
+        varchar     organization_id FK "→ organizations.id (SET NULL)"
+        varchar     created_by      FK "→ users.id — منشئ المشروع (SET NULL)"
+        varchar     leader_id       FK "→ users.id — قائد المشروع (SET NULL)"
+        varchar     from_email          "بريد إرسال الإشعارات"
+        varchar     reply_to_email      "بريد الرد على الإشعارات"
+        text        icon_url            "رابط الأيقونة"
+        bigint      starting_number "NOT NULL DEFAULT 1 — رقم بدء التذاكر"
+        varchar     team_id         FK "→ groups.id — فريق المشروع (TEAM)"
+        timestamptz created_at          "طابع تدقيق داخلي"
+        timestamptz updated_at          "طابع تدقيق داخلي"
+    }
+
+    %% =====================================================================
+    %% المستوى 3: جداول الوصل والربط المتعدد (Junction & Association Tables)
+    %% =====================================================================
+
+    group_members {
+        varchar     id              PK "مفتاح أساسي (UUID)"
+        varchar     group_id        FK "NOT NULL — المجموعة الحاوية (CASCADE)"
+        varchar     user_id         FK "عضو مستخدم → users.id (CASCADE)"
+        varchar     member_type        "DEFAULT 'USER' — USER | GROUP"
+        varchar     member_group_id FK "عضو مجموعة/فريق فرعي (CASCADE)"
+        boolean     is_team_member     "DEFAULT FALSE — هل العضو ضمن فريق عمل"
+        timestamptz created_at         "DEFAULT NOW() — وقت الإضافة"
+    }
 
     assigned_roles {
-        varchar       id              PK "مفتاح أساسي"
-        varchar       role_id         FK "→ roles.id — NOT NULL — ON DELETE CASCADE"
-        access_scope_type scope_type  "NOT NULL — GLOBAL | ORGANIZATION | PROJECT"
-        varchar       project_id      FK "→ projects.id — نطاق PROJECT فقط"
-        varchar       organization_id FK "→ organizations.id — ON DELETE CASCADE"
-        varchar       user_id         FK "→ users.id — حامل الحالة الأولى"
-        varchar       group_id        FK "→ groups.id — حامل الحالة الثانية"
-        timestamptz   created_at          "طابع تدقيق داخلي"
-        timestamptz   updated_at          "طابع تدقيق داخلي"
+        varchar           id              PK "مفتاح أساسي (UUID)"
+        varchar           role_id         FK "NOT NULL — → roles.id (CASCADE)"
+        access_scope_type scope_type      "NOT NULL — GLOBAL | ORGANIZATION | PROJECT"
+        varchar           project_id      FK "→ projects.id (CASCADE) — نطاق المشروع"
+        varchar           organization_id FK "→ organizations.id (CASCADE) — نطاق المؤسسة"
+        varchar           user_id         FK "→ users.id (CASCADE) — الحامل: مستخدم"
+        varchar           group_id        FK "→ groups.id (CASCADE) — الحامل: مجموعة/فريق"
+        timestamptz       created_at         "طابع تدقيق داخلي"
+        timestamptz       updated_at         "طابع تدقيق داخلي"
     }
 
     %% =====================================================================
-    %% 8. مجموعات العملاء ومشاريع مركز المساعدة (Customer Groups)
+    %% العلاقات (Relationships — مرتبة انسيابياً من الأعلى إلى الأسفل)
     %% =====================================================================
 
-    group_customer_projects {
-        varchar     group_id    PK "جزء من المفتاح الأساسي + FK → groups.id"
-        varchar     project_id  PK "جزء من المفتاح الأساسي — بلا مفتاح أجنبي!"
-        boolean     auto_share     "NOT NULL — مشاركة التذاكر تلقائياً"
-        timestamptz created_at     "طابع تدقيق داخلي"
-    }
+    %% 1. تدرج المجموعات الذاتي (Self-referencing tree)
+    groups o|--o{ groups : "parent_group_id — تدرج هرمي"
 
-    %% =====================================================================
-    %% العلاقات (Relationships)
-    %% =====================================================================
+    %% 2. علاقات سياق المشاريع (Projects Context)
+    organizations ||--o{ projects : "organization_id (SET NULL)"
+    users         ||--o{ projects : "leader_id — قائد المشروع (SET NULL)"
+    users         ||--o{ projects : "created_by — منشئ المشروع (SET NULL)"
+    groups        ||--o| projects : "team_id — فريق عمل المشروع (TEAM)"
 
-    %% --- المجموعات: شجرة تداخل ذاتية ---
-    groups o|--o{ groups : "parent_group_id — توريث الأدوار من الجذر للأسفل"
+    %% 3. عضوية المجموعات والفرق (Group Membership)
+    groups ||--o{ group_members : "group_id — المجموعة الحاوية"
+    users  ||--o{ group_members : "user_id — عضوية حساب مستخدم"
+    groups ||--o{ group_members : "member_group_id — عضوية مجموعة فرعية"
 
-    %% --- العضوية ---
-    groups ||--o{ group_members : "ينضم إليها (ON DELETE CASCADE)"
-    users  ||--o{ group_members : "عضو مباشر (ON DELETE CASCADE)"
-
-    %% --- إعدادات الرؤية ---
-    groups ||--o{ group_visibility : "تُقيَّد رؤيتها / تعديلها"
-    users  ||--o{ group_visibility : "مُدرج في الإعداد كحساب"
-    groups ||--o{ group_visibility : "مُدرج في الإعداد كمجموعة"
-
-    %% --- المشاريع ---
-    organizations ||--o{ projects : "تضم مشاريع (ON DELETE SET NULL)"
-    users          ||--o{ projects : "أنشأ المشروع (ON DELETE SET NULL)"
-    users          ||--o{ projects : "يقود المشروع (ON DELETE SET NULL)"
-    projects       ||--o| project_teams : "يملك فريقاً واحداً (قيد تفرد)"
-
-    %% --- الأدوار المعطاة ---
-    roles          ||--o{ assigned_roles : "تُمنح في (ON DELETE CASCADE)"
-    projects       ||--o{ assigned_roles : "نطاق المشروع (بلا ON DELETE)"
-    organizations  ||--o{ assigned_roles : "نطاق المؤسسة (ON DELETE CASCADE)"
-    users          ||--o{ assigned_roles : "حالة: مستخدم (ON DELETE CASCADE)"
-    groups         ||--o{ assigned_roles : "حالة: مجموعة (ON DELETE CASCADE)"
-
-    %% --- مجموعات العملاء ---
-    groups    ||--o{ group_customer_projects : "مجموعة عميل في مشروع مساعدة"
-    projects  o|--o{ group_customer_projects : "مشروع مساعدة (مرجع غير مُطبَّق)"
-
-    %% --- ملاحظات على الجداول غير المتصلة ---
-    organizations o|--o{ projects : "مشروع بلا مؤسسة (organization_id = NULL)"
+    %% 4. إسناد الأدوار والصلاحيات (Role Assignments)
+    roles         ||--o{ assigned_roles : "role_id — الدور الممنوح"
+    organizations ||--o{ assigned_roles : "organization_id — نطاق المؤسسة"
+    projects      ||--o{ assigned_roles : "project_id — نطاق المشروع"
+    users         ||--o{ assigned_roles : "user_id — حامل الصلاحية: مستخدم"
+    groups        ||--o{ assigned_roles : "group_id — حامل الصلاحية: مجموعة/فريق"

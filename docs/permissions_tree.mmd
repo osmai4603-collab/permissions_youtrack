@@ -1,0 +1,138 @@
+%% =========================================================================
+%% YouTrack Permissions Hierarchy & Implication Tree
+%% مخطط شجري لصلاحيات يوتراك مع إظهار الصلاحيات الضمنية (Implied Permissions)
+%% =========================================================================
+%% مفتاح الألوان حسب النطاق (Scope Coloring Legend):
+%% 🟡 نطاق عام (Global Scope): fill:#FEF3C7, stroke:#D97706, color:#92400E
+%% 🟣 نطاق المؤسسة (Organization Scope): fill:#EDE9FE, stroke:#7C3AED, color:#5B21B6
+%% 🔵 نطاق المشروع (Project Scope): fill:#E0F2FE, stroke:#0284C7, color:#075985
+%% =========================================================================
+%% دلالة الأسهم:
+%% A --> B تعني أن الصلاحية A تتضمن ضمنياً الصلاحية B (A Implies B)
+%% =========================================================================
+
+flowchart TD
+
+    %% ---------------------------------------------------------------------
+    %% أنماط النطاقات (Scope Styles)
+    %% ---------------------------------------------------------------------
+    classDef scopeGlobal fill:#FEF3C7,stroke:#D97706,stroke-width:2px,color:#92400E,font-weight:bold;
+    classDef scopeOrg fill:#EDE9FE,stroke:#7C3AED,stroke-width:2px,color:#5B21B6,font-weight:bold;
+    classDef scopeProj fill:#E0F2FE,stroke:#0284C7,stroke-width:2px,color:#075985,font-weight:bold;
+
+    %% ---------------------------------------------------------------------
+    %% 1. صلاحيات النظام (System)
+    %% ---------------------------------------------------------------------
+    subgraph SYSTEM ["النظام (System)"]
+        ADMIN_UPDATE_APP["ADMIN_UPDATE_APP"]:::scopeGlobal --> ADMIN_READ_APP["ADMIN_READ_APP"]:::scopeGlobal
+    end
+
+    %% ---------------------------------------------------------------------
+    %% 2. صلاحيات المؤسسات (Organizations)
+    %% ---------------------------------------------------------------------
+    subgraph ORGANIZATIONS ["المؤسسات (Organizations)"]
+        CREATE_ORGANIZATION["CREATE_ORGANIZATION"]:::scopeGlobal --> READ_ORGANIZATION["READ_ORGANIZATION"]:::scopeOrg
+        UPDATE_ORGANIZATION["UPDATE_ORGANIZATION"]:::scopeOrg --> READ_ORGANIZATION
+        DELETE_ORGANIZATION["DELETE_ORGANIZATION"]:::scopeOrg --> READ_ORGANIZATION
+    end
+
+    %% ---------------------------------------------------------------------
+    %% 3. صلاحيات المستخدمين (Users)
+    %% ---------------------------------------------------------------------
+    subgraph USERS ["المستخدمين (Users)"]
+        CREATE_USER["CREATE_USER"]:::scopeGlobal
+        UPDATE_USER["UPDATE_USER"]:::scopeGlobal --> UPDATE_PROFILE["UPDATE_PROFILE"]:::scopeGlobal
+        UPDATE_USER --> READ_USER["READ_USER"]:::scopeGlobal
+        DELETE_USER["DELETE_USER"]:::scopeGlobal --> READ_USER
+        READ_USER --> READ_USER_BASIC["READ_USER_BASIC"]:::scopeGlobal
+    end
+
+    %% ---------------------------------------------------------------------
+    %% 4. صلاحيات المشاريع والتذاكر (Projects & Issues)
+    %% ---------------------------------------------------------------------
+    subgraph PROJECTS_AND_ISSUES ["المشاريع والتذاكر (Projects & Issues)"]
+        CREATE_PROJECT["CREATE_PROJECT"]:::scopeGlobal
+        UPDATE_PROJECT["UPDATE_PROJECT"]:::scopeProj --> READ_PROJECT["READ_PROJECT"]:::scopeProj
+        DELETE_PROJECT["DELETE_PROJECT"]:::scopeProj --> READ_PROJECT
+        READ_PROJECT --> READ_PROJECT_BASIC["READ_PROJECT_BASIC"]:::scopeProj
+
+        CREATE_ISSUE["CREATE_ISSUE"]:::scopeProj --> READ_PROJECT_BASIC
+        READ_ISSUE["READ_ISSUE"]:::scopeProj --> READ_PROJECT_BASIC
+        VIEW_VOTERS["VIEW_VOTERS"]:::scopeProj --> READ_PROJECT_BASIC
+        VIEW_WATCHERS["VIEW_WATCHERS"]:::scopeProj --> READ_PROJECT_BASIC
+
+        READ_HIDDEN_STUFF["READ_HIDDEN_STUFF"]:::scopeProj --> PRIVATE_READ_ISSUE["PRIVATE_READ_ISSUE"]:::scopeProj
+        PRIVATE_READ_ISSUE --> READ_PROJECT_BASIC
+
+        PRIVATE_UPDATE_ISSUE["PRIVATE_UPDATE_ISSUE"]:::scopeProj --> PRIVATE_READ_ISSUE
+        PRIVATE_UPDATE_ISSUE --> UPDATE_ISSUE["UPDATE_ISSUE"]:::scopeProj
+
+        DELETE_ISSUE["DELETE_ISSUE"]:::scopeProj
+        LINK_ISSUE["LINK_ISSUE"]:::scopeProj
+        UPDATE_WATCHERS["UPDATE_WATCHERS"]:::scopeProj
+        APPLY_COMMANDS_SILENTLY["APPLY_COMMANDS_SILENTLY"]:::scopeProj
+    end
+
+    %% ---------------------------------------------------------------------
+    %% 5. مرفقات التذاكر (Attachments)
+    %% ---------------------------------------------------------------------
+    subgraph ISSUE_ATTACHMENTS ["مرفقات التذاكر (Attachments)"]
+        CREATE_ATTACHMENT_ISSUE["CREATE_ATTACHMENT_ISSUE"]:::scopeProj
+        UPDATE_ATTACHMENT_ISSUE["UPDATE_ATTACHMENT_ISSUE"]:::scopeProj
+        DELETE_ATTACHMENT_ISSUE["DELETE_ATTACHMENT_ISSUE"]:::scopeProj
+    end
+
+    %% ---------------------------------------------------------------------
+    %% 6. تعليقات التذاكر (Comments)
+    %% ---------------------------------------------------------------------
+    subgraph ISSUE_COMMENTS ["تعليقات التذاكر (Comments)"]
+        CREATE_COMMENT["CREATE_COMMENT"]:::scopeProj
+        UPDATE_COMMENT["UPDATE_COMMENT"]:::scopeProj
+        DELETE_COMMENT["DELETE_COMMENT"]:::scopeProj
+        UPDATE_NOT_OWN_COMMENT["UPDATE_NOT_OWN_COMMENT"]:::scopeProj --> READ_COMMENT["READ_COMMENT"]:::scopeProj
+        DELETE_NOT_OWN_COMMENT["DELETE_NOT_OWN_COMMENT"]:::scopeProj --> READ_COMMENT
+    end
+
+    %% ---------------------------------------------------------------------
+    %% 7. بنود وتتبع العمل (Work Items)
+    %% ---------------------------------------------------------------------
+    subgraph WORK_ITEMS ["بنود وتتبع العمل (Work Items)"]
+        CREATE_NOT_OWN_WORK_ITEM["CREATE_NOT_OWN_WORK_ITEM"]:::scopeProj --> CREATE_WORK_ITEM["CREATE_WORK_ITEM"]:::scopeProj
+        UPDATE_NOT_OWN_WORK_ITEM["UPDATE_NOT_OWN_WORK_ITEM"]:::scopeProj --> READ_WORK_ITEM["READ_WORK_ITEM"]:::scopeProj
+        UPDATE_NOT_OWN_WORK_ITEM --> UPDATE_WORK_ITEM["UPDATE_WORK_ITEM"]:::scopeProj
+    end
+
+    %% ---------------------------------------------------------------------
+    %% 8. المقالات (Articles)
+    %% ---------------------------------------------------------------------
+    subgraph ARTICLES ["المقالات (Articles)"]
+        CREATE_ARTICLE["CREATE_ARTICLE"]:::scopeProj --> READ_ARTICLE["READ_ARTICLE"]:::scopeProj
+        UPDATE_ARTICLE["UPDATE_ARTICLE"]:::scopeProj --> READ_ARTICLE
+        DELETE_ARTICLE["DELETE_ARTICLE"]:::scopeProj --> READ_ARTICLE
+    end
+
+    %% ---------------------------------------------------------------------
+    %% 9. تعليقات المقالات (Article Comments)
+    %% ---------------------------------------------------------------------
+    subgraph ARTICLE_COMMENTS ["تعليقات المقالات (Article Comments)"]
+        CREATE_ARTICLE_COMMENT["CREATE_ARTICLE_COMMENT"]:::scopeProj --> READ_ARTICLE_COMMENT["READ_ARTICLE_COMMENT"]:::scopeProj
+        UPDATE_ARTICLE_COMMENT["UPDATE_ARTICLE_COMMENT"]:::scopeProj --> READ_ARTICLE_COMMENT
+        DELETE_ARTICLE_COMMENT["DELETE_ARTICLE_COMMENT"]:::scopeProj --> READ_ARTICLE_COMMENT
+    end
+
+    %% ---------------------------------------------------------------------
+    %% 10. محتوى التطبيقات (Apps)
+    %% ---------------------------------------------------------------------
+    subgraph APPS ["محتوى التطبيقات (Apps)"]
+        UPDATE_APP_CONTENT["UPDATE_APP_CONTENT"]:::scopeProj --> READ_APP_CONTENT["READ_APP_CONTENT"]:::scopeProj
+    end
+
+    %% ---------------------------------------------------------------------
+    %% 11. الوسوم والبحث المحفوظ (Watch Folders)
+    %% ---------------------------------------------------------------------
+    subgraph WATCH_FOLDERS ["الوسوم والبحث المحفوظ (Watch Folders)"]
+        CREATE_WATCH_FOLDER["CREATE_WATCH_FOLDER"]:::scopeProj
+        UPDATE_WATCH_FOLDER["UPDATE_WATCH_FOLDER"]:::scopeProj
+        DELETE_WATCH_FOLDER["DELETE_WATCH_FOLDER"]:::scopeProj
+        SHARE_WATCH_FOLDER["SHARE_WATCH_FOLDER"]:::scopeProj
+    end

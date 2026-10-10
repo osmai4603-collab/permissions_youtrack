@@ -1,0 +1,270 @@
+%%{init: {
+  'theme': 'dark',
+  'themeVariables': {
+    'darkMode': true,
+    'background': '#0B0F19',
+    'mainBkg': '#0B0F19',
+    'textColor': '#F9FAFB',
+    'lineColor': '#818CF8',
+    'fontFamily': 'Cairo, Inter, system-ui, -apple-system, sans-serif',
+    'fontSize': '13px',
+    'edgeLabelBackground': '#1F2937',
+    'clusterBkg': '#0F172A',
+    'clusterBorder': '#334155',
+    'titleColor': '#F8FAFC'
+  }
+}}%%
+flowchart TB
+
+    %% =========================================================================
+    %% تنسيق الألوان للطبقات الهرمية والسمات (Hierarchical Layer Themes & Styling)
+    %% =========================================================================
+    classDef layerRoot fill:#1E1B4B,stroke:#6366F1,stroke-width:3px,color:#FFFFFF,font-weight:bold;
+    classDef layer1 fill:#064E3B,stroke:#10B981,stroke-width:2.5px,color:#FFFFFF,font-weight:bold;
+    classDef layer2 fill:#78350F,stroke:#F59E0B,stroke-width:2px,color:#FFFFFF,font-weight:bold;
+    classDef layer3 fill:#4A044E,stroke:#E879F9,stroke-width:2px,color:#FFFFFF,font-weight:bold;
+    classDef layerArticle fill:#581C87,stroke:#A855F7,stroke-width:2.5px,color:#FFFFFF,font-weight:bold;
+    classDef layerArticleSub fill:#3B0764,stroke:#C084FC,stroke-width:2px,color:#FFFFFF,font-weight:bold;
+    classDef standalone fill:#1F2937,stroke:#6B7280,stroke-width:2px,color:#F3F4F6,font-weight:bold;
+
+    %% =========================================================================
+    %% الطبقة 0: الصلاحيات الجذرية التأسيسية (Layer 0 - Core Foundation Roots)
+    %% المرتكزات الأساسية التي تتضمنها الصلاحيات الأخرى وتصب فيها علاقات التضمين
+    %% =========================================================================
+    subgraph L0 ["الطبقة 0: الصلاحيات الجذرية التأسيسية (Layer 0: Core Foundation Roots)"]
+        direction TB
+
+        subgraph L0_PROJ ["جذر المشاريع والتذاكر الرئيسي"]
+            READ_PROJECT_BASIC["READ_PROJECT_BASIC<br/><b>Read Project Basic</b><br/><i>(الجذر الأكبر لكافة عمليات المشاريع والتذاكر)</i>"]:::layerRoot
+            UPDATE_ISSUE["UPDATE_ISSUE<br/><b>Update Issue</b><br/><i>(جذر تعديل الحقول العامة للتذاكر)</i>"]:::layerRoot
+        end
+
+        subgraph L0_USER ["جذور هوية وحسابات المستخدمين"]
+            READ_USER_BASIC["READ_USER_BASIC<br/><b>Read User Basic</b><br/><i>(جذر هوية المستخدمين الأساسية)</i>"]:::layerRoot
+            UPDATE_PROFILE["UPDATE_PROFILE<br/><b>Update Self</b><br/><i>(جذر تعديل الملف الشخصي وأمان الحساب الذاتي)</i>"]:::layerRoot
+        end
+
+        subgraph L0_ORG ["جذر المؤسسات"]
+            READ_ORGANIZATION["READ_ORGANIZATION<br/><b>Read Organization</b><br/><i>(جذر استعراض المؤسسات وبياناتها)</i>"]:::layerRoot
+        end
+
+        subgraph L0_SYS ["جذور النظام والتطبيقات"]
+            ADMIN_READ_APP["ADMIN_READ_APP<br/><b>Low-level Admin Read</b><br/><i>(جذر قراءة إعدادات النظام)</i>"]:::layerRoot
+            READ_APP_CONTENT["READ_APP_CONTENT<br/><b>Read App Content</b><br/><i>(جذر قراءة وتصدير محتوى التطبيقات)</i>"]:::layerRoot
+        end
+
+        subgraph L0_INTERACTION ["جذور التفاعلات وسجلات العمل الذاتية"]
+            READ_COMMENT["READ_COMMENT<br/><b>Read Issue Comment</b><br/><i>(جذر استعراض تعليقات التذاكر)</i>"]:::layerRoot
+            CREATE_WORK_ITEM["CREATE_WORK_ITEM<br/><b>Create Work Item</b><br/><i>(جذر تسجيل بنود العمل الذاتية)</i>"]:::layerRoot
+            READ_WORK_ITEM["READ_WORK_ITEM<br/><b>Read Work Item</b><br/><i>(جذر استعراض بنود العمل)</i>"]:::layerRoot
+            UPDATE_WORK_ITEM["UPDATE_WORK_ITEM<br/><b>Update Work Item</b><br/><i>(جذر تعديل وقت العمل الذاتي)</i>"]:::layerRoot
+        end
+    end
+
+    %% =========================================================================
+    %% الطبقة 1: التضمين المباشر - الدرجة الأولى (Layer 1 - 1st Degree Implied)
+    %% الصلاحيات التي تتضمن الجذور مباشرة، أو تشكل جذوراً فرعية لمساراتها
+    %% =========================================================================
+    subgraph L1 ["الطبقة 1: التضمين المباشر - الدرجة الأولى (Layer 1: 1st Degree Implied Tier)"]
+        direction TB
+
+        subgraph L1_PROJ_OPS ["عمليات التذاكر والمشاريع الأساسية (تتضمن Read Project Basic)"]
+            READ_PROJECT["READ_PROJECT<br/><b>Read Project Full</b>"]:::layer1
+            CREATE_ISSUE["CREATE_ISSUE<br/><b>Create Issue</b>"]:::layer1
+            READ_ISSUE["READ_ISSUE<br/><b>Read Issue</b>"]:::layer1
+            PRIVATE_READ_ISSUE["PRIVATE_READ_ISSUE<br/><b>Read Private Fields</b>"]:::layer1
+            VIEW_VOTERS["VIEW_VOTERS<br/><b>View Voters</b>"]:::layer1
+            VIEW_WATCHERS["VIEW_WATCHERS<br/><b>View Watchers</b>"]:::layer1
+        end
+
+        subgraph L1_USERS ["تفاصيل المستخدمين (تتضمن Read User Basic)"]
+            READ_USER["READ_USER<br/><b>Read User Details</b>"]:::layer1
+        end
+
+        subgraph L1_ADMIN ["إدارة النظام والمحتوى والمؤسسات"]
+            ADMIN_UPDATE_APP["ADMIN_UPDATE_APP<br/><b>Low-level Admin Write</b>"]:::layer1
+            UPDATE_APP_CONTENT["UPDATE_APP_CONTENT<br/><b>Update App Content</b>"]:::layer1
+            CREATE_ORGANIZATION["CREATE_ORGANIZATION<br/><b>Create Organization</b>"]:::layer1
+            UPDATE_ORGANIZATION["UPDATE_ORGANIZATION<br/><b>Update Organization</b>"]:::layer1
+            DELETE_ORGANIZATION["DELETE_ORGANIZATION<br/><b>Delete Organization</b>"]:::layer1
+        end
+
+        subgraph L1_INTERACTION_OPS ["عمليات التفاعل وبنود العمل المتقدمة"]
+            UPDATE_NOT_OWN_COMMENT["UPDATE_NOT_OWN_COMMENT<br/><b>Update Other Comment</b>"]:::layer1
+            DELETE_NOT_OWN_COMMENT["DELETE_NOT_OWN_COMMENT<br/><b>Delete Other Comment</b>"]:::layer1
+            CREATE_NOT_OWN_WORK_ITEM["CREATE_NOT_OWN_WORK_ITEM<br/><b>Create Other Work Item</b>"]:::layer1
+            UPDATE_NOT_OWN_WORK_ITEM["UPDATE_NOT_OWN_WORK_ITEM<br/><b>Update Other Work Item</b>"]:::layer1
+        end
+
+        subgraph L1_KNOWLEDGE_BASE ["قاعدة المعرفة (المقالات في الوثائق الرسمية)"]
+            READ_ARTICLE["READ_ARTICLE<br/><b>Read Article</b><br/><i>(جذر مسار المقالات المعرفية)</i>"]:::layerArticle
+        end
+    end
+
+    %% =========================================================================
+    %% الطبقة 2: التضمين المتعدي - الدرجة الثانية (Layer 2 - 2nd Degree Implied)
+    %% الصلاحيات الحاكمة التي تتضمن صلاحيات الطبقة 1 ويتعدى تضمينها للجذور
+    %% =========================================================================
+    subgraph L2 ["الطبقة 2: التضمين المتعدي - الدرجة الثانية (Layer 2: 2nd Degree Implied Tier)"]
+        direction TB
+
+        subgraph L2_PROJ_MGMT ["إدارة وتعديل وحذف المشروع"]
+            UPDATE_PROJECT["UPDATE_PROJECT<br/><b>Update Project</b>"]:::layer2
+            DELETE_PROJECT["DELETE_PROJECT<br/><b>Delete Project</b>"]:::layer2
+        end
+
+        subgraph L2_ISSUE_PRIV ["إدارة الحقول الخاصة والمخفية للتذاكر"]
+            READ_HIDDEN_STUFF["READ_HIDDEN_STUFF<br/><b>Override Visibility</b>"]:::layer2
+            PRIVATE_UPDATE_ISSUE["PRIVATE_UPDATE_ISSUE<br/><b>Update Private Fields</b>"]:::layer2
+        end
+
+        subgraph L2_USER_MGMT ["إدارة وتعديل وحذف المستخدمين"]
+            UPDATE_USER["UPDATE_USER<br/><b>Update User</b>"]:::layer2
+            DELETE_USER["DELETE_USER<br/><b>Delete User</b>"]:::layer2
+        end
+
+        subgraph L2_ARTICLE_OPS ["عمليات المقالات وقراءة تعليقاتها"]
+            CREATE_ARTICLE["CREATE_ARTICLE<br/><b>Create Article</b>"]:::layerArticleSub
+            UPDATE_ARTICLE["UPDATE_ARTICLE<br/><b>Update Article</b>"]:::layerArticleSub
+            DELETE_ARTICLE["DELETE_ARTICLE<br/><b>Delete Article</b>"]:::layerArticleSub
+            READ_ARTICLE_COMMENT["READ_ARTICLE_COMMENT<br/><b>Read Article Comment</b><br/><i>(جذر مسار تعليقات المقالات)</i>"]:::layerArticleSub
+        end
+    end
+
+    %% =========================================================================
+    %% الطبقة 3: التضمين المتعدي - الدرجة الثالثة (Layer 3 - 3rd Degree Implied)
+    %% عمليات تعليقات مقالات قاعدة المعرفة (تتضمن الطبقة 2 والطبقة 1 والجذر)
+    %% =========================================================================
+    subgraph L3 ["الطبقة 3: التضمين المتعدي - الدرجة الثالثة (Layer 3: 3rd Degree Implied Tier)"]
+        direction TB
+
+        subgraph L3_ARTICLE_COMMENTS ["إدارة تعليقات المقالات (تتضمن Read Article Comment)"]
+            CREATE_ARTICLE_COMMENT["CREATE_ARTICLE_COMMENT<br/><b>Create Article Comment</b>"]:::layer3
+            UPDATE_ARTICLE_COMMENT["UPDATE_ARTICLE_COMMENT<br/><b>Update Article Comment</b>"]:::layer3
+            DELETE_ARTICLE_COMMENT["DELETE_ARTICLE_COMMENT<br/><b>Delete Article Comment</b>"]:::layer3
+        end
+    end
+
+    %% =========================================================================
+    %% الطبقة المستقلة: الصلاحيات ذاتية الاكتفاء (Standalone Tier - 16 Permissions)
+    %% لا تتضمن أي صلاحية، ولا تتضمنها أي صلاحية أخرى في النظام
+    %% =========================================================================
+    subgraph L_STANDALONE ["الصلاحيات المستقلة ذاتية الاكتفاء (Standalone - 0 Implied / 0 Impliers)"]
+        direction TB
+
+        subgraph SA_USERS_PROJ ["مستقلات الحسابات والمشاريع والتذاكر"]
+            CREATE_USER["CREATE_USER<br/><b>Create User</b>"]:::standalone
+            CREATE_PROJECT["CREATE_PROJECT<br/><b>Create Project</b>"]:::standalone
+            DELETE_ISSUE["DELETE_ISSUE<br/><b>Delete Issue</b>"]:::standalone
+            LINK_ISSUE["LINK_ISSUE<br/><b>Link Issues</b>"]:::standalone
+            UPDATE_WATCHERS["UPDATE_WATCHERS<br/><b>Update Watchers</b>"]:::standalone
+            APPLY_COMMANDS_SILENTLY["APPLY_COMMANDS_SILENTLY<br/><b>Silent Commands</b>"]:::standalone
+        end
+
+        subgraph SA_ATTACHMENTS ["مرفقات التذاكر (تحكم ذاتي)"]
+            CREATE_ATTACHMENT_ISSUE["CREATE_ATTACHMENT_ISSUE<br/><b>Add Attachment</b>"]:::standalone
+            UPDATE_ATTACHMENT_ISSUE["UPDATE_ATTACHMENT_ISSUE<br/><b>Update Attachment</b>"]:::standalone
+            DELETE_ATTACHMENT_ISSUE["DELETE_ATTACHMENT_ISSUE<br/><b>Delete Attachment</b>"]:::standalone
+        end
+
+        subgraph SA_COMMENTS ["تعليقات التذاكر الذاتية"]
+            CREATE_COMMENT["CREATE_COMMENT<br/><b>Create Comment</b>"]:::standalone
+            UPDATE_COMMENT["UPDATE_COMMENT<br/><b>Update Comment</b>"]:::standalone
+            DELETE_COMMENT["DELETE_COMMENT<br/><b>Delete Comment</b>"]:::standalone
+        end
+
+        subgraph SA_WATCH_FOLDERS ["البحث المحفوظ والوسوم (Saved Searches & Tags)"]
+            CREATE_WATCH_FOLDER["CREATE_WATCH_FOLDER<br/><b>Create Tag/Search</b>"]:::standalone
+            UPDATE_WATCH_FOLDER["UPDATE_WATCH_FOLDER<br/><b>Edit Tag/Search</b>"]:::standalone
+            DELETE_WATCH_FOLDER["DELETE_WATCH_FOLDER<br/><b>Delete Tag/Search</b>"]:::standalone
+            SHARE_WATCH_FOLDER["SHARE_WATCH_FOLDER<br/><b>Share Custom View</b>"]:::standalone
+        end
+    end
+
+    %% =========================================================================
+    %% روابط شجرة التضمين من الدرجة الثانية إلى الدرجة الأولى (L2 ==> L1)
+    %% =========================================================================
+    UPDATE_PROJECT ==>|يتضمن ضمناً| READ_PROJECT
+    DELETE_PROJECT ==>|يتضمن ضمناً| READ_PROJECT
+
+    READ_HIDDEN_STUFF ==>|يتضمن ضمناً| PRIVATE_READ_ISSUE
+    PRIVATE_UPDATE_ISSUE ==>|يتضمن ضمناً| PRIVATE_READ_ISSUE
+    PRIVATE_UPDATE_ISSUE ==>|يتضمن ضمناً| UPDATE_ISSUE
+
+    UPDATE_USER ==>|يتضمن ضمناً| READ_USER
+    UPDATE_USER ==>|يتضمن ضمناً| UPDATE_PROFILE
+    DELETE_USER ==>|يتضمن ضمناً| READ_USER
+
+    CREATE_ARTICLE ==>|يتضمن ضمناً| READ_ARTICLE
+    UPDATE_ARTICLE ==>|يتضمن ضمناً| READ_ARTICLE
+    DELETE_ARTICLE ==>|يتضمن ضمناً| READ_ARTICLE
+    READ_ARTICLE_COMMENT -.->|مشروط بـ| READ_ARTICLE
+
+    %% =========================================================================
+    %% روابط شجرة التضمين من الدرجة الثالثة إلى الدرجة الثانية (L3 ==> L2)
+    %% =========================================================================
+    CREATE_ARTICLE_COMMENT ==>|يتضمن ضمناً| READ_ARTICLE_COMMENT
+    UPDATE_ARTICLE_COMMENT ==>|يتضمن ضمناً| READ_ARTICLE_COMMENT
+    DELETE_ARTICLE_COMMENT ==>|يتضمن ضمناً| READ_ARTICLE_COMMENT
+
+    %% =========================================================================
+    %% روابط شجرة التضمين من الدرجة الأولى إلى الجذور التأسيسية (L1 ==> L0)
+    %% =========================================================================
+    READ_PROJECT ==>|يتضمن ضمناً| READ_PROJECT_BASIC
+    CREATE_ISSUE ==>|يتضمن ضمناً| READ_PROJECT_BASIC
+    READ_ISSUE ==>|يتضمن ضمناً| READ_PROJECT_BASIC
+    PRIVATE_READ_ISSUE ==>|يتضمن ضمناً| READ_PROJECT_BASIC
+    VIEW_VOTERS ==>|يتضمن ضمناً| READ_PROJECT_BASIC
+    VIEW_WATCHERS ==>|يتضمن ضمناً| READ_PROJECT_BASIC
+
+    READ_USER ==>|يتضمن ضمناً| READ_USER_BASIC
+
+    ADMIN_UPDATE_APP ==>|يتضمن ضمناً| ADMIN_READ_APP
+    UPDATE_APP_CONTENT ==>|يتضمن ضمناً| READ_APP_CONTENT
+
+    CREATE_ORGANIZATION ==>|يتضمن ضمناً| READ_ORGANIZATION
+    UPDATE_ORGANIZATION ==>|يتضمن ضمناً| READ_ORGANIZATION
+    DELETE_ORGANIZATION ==>|يتضمن ضمناً| READ_ORGANIZATION
+
+    UPDATE_NOT_OWN_COMMENT ==>|يتضمن ضمناً| READ_COMMENT
+    DELETE_NOT_OWN_COMMENT ==>|يتضمن ضمناً| READ_COMMENT
+
+    CREATE_NOT_OWN_WORK_ITEM ==>|يتضمن ضمناً| CREATE_WORK_ITEM
+    UPDATE_NOT_OWN_WORK_ITEM ==>|يتضمن ضمناً| READ_WORK_ITEM
+    UPDATE_NOT_OWN_WORK_ITEM ==>|يتضمن ضمناً| UPDATE_WORK_ITEM
+
+    %% الرابط السياقي الموثق لمقالات قاعدة المعرفة بجذر المشروع
+    READ_ARTICLE -.->|مشروط سياقياً بـ| READ_PROJECT_BASIC
+
+    %% =========================================================================
+    %% تنسيقات الخلفيات الداكنة للحاويات لمنع أي خلفية بيضاء (Dark Container Styles)
+    %% =========================================================================
+    style L0 fill:#0F172A,stroke:#334155,stroke-width:2px,color:#F8FAFC
+    style L1 fill:#0F172A,stroke:#334155,stroke-width:2px,color:#F8FAFC
+    style L2 fill:#0F172A,stroke:#334155,stroke-width:2px,color:#F8FAFC
+    style L3 fill:#0F172A,stroke:#334155,stroke-width:2px,color:#F8FAFC
+    style L_STANDALONE fill:#0F172A,stroke:#334155,stroke-width:2px,color:#F8FAFC
+
+    style L0_PROJ fill:#1E293B,stroke:#475569,stroke-width:1.5px,color:#CBD5E1
+    style L0_USER fill:#1E293B,stroke:#475569,stroke-width:1.5px,color:#CBD5E1
+    style L0_ORG fill:#1E293B,stroke:#475569,stroke-width:1.5px,color:#CBD5E1
+    style L0_SYS fill:#1E293B,stroke:#475569,stroke-width:1.5px,color:#CBD5E1
+    style L0_INTERACTION fill:#1E293B,stroke:#475569,stroke-width:1.5px,color:#CBD5E1
+
+    style L1_PROJ_OPS fill:#1E293B,stroke:#475569,stroke-width:1.5px,color:#CBD5E1
+    style L1_USERS fill:#1E293B,stroke:#475569,stroke-width:1.5px,color:#CBD5E1
+    style L1_ADMIN fill:#1E293B,stroke:#475569,stroke-width:1.5px,color:#CBD5E1
+    style L1_INTERACTION_OPS fill:#1E293B,stroke:#475569,stroke-width:1.5px,color:#CBD5E1
+    style L1_KNOWLEDGE_BASE fill:#1E293B,stroke:#475569,stroke-width:1.5px,color:#CBD5E1
+
+    style L2_PROJ_MGMT fill:#1E293B,stroke:#475569,stroke-width:1.5px,color:#CBD5E1
+    style L2_ISSUE_PRIV fill:#1E293B,stroke:#475569,stroke-width:1.5px,color:#CBD5E1
+    style L2_USER_MGMT fill:#1E293B,stroke:#475569,stroke-width:1.5px,color:#CBD5E1
+    style L2_ARTICLE_OPS fill:#1E293B,stroke:#475569,stroke-width:1.5px,color:#CBD5E1
+
+    style L3_ARTICLE_COMMENTS fill:#1E293B,stroke:#475569,stroke-width:1.5px,color:#CBD5E1
+
+    style SA_USERS_PROJ fill:#1E293B,stroke:#475569,stroke-width:1.5px,color:#CBD5E1
+    style SA_ATTACHMENTS fill:#1E293B,stroke:#475569,stroke-width:1.5px,color:#CBD5E1
+    style SA_COMMENTS fill:#1E293B,stroke:#475569,stroke-width:1.5px,color:#CBD5E1
+    style SA_WATCH_FOLDERS fill:#1E293B,stroke:#475569,stroke-width:1.5px,color:#CBD5E1

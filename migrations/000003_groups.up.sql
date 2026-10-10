@@ -72,7 +72,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER triggerAfterInsertgGroup
+CREATE TRIGGER triggerBeforeInsertgGroup
     BEFORE INSERT OR UPDATE ON groups
     FOR EACH ROW EXECUTE FUNCTION validate_group_hierarchy();
 
@@ -133,8 +133,6 @@ BEGIN
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
-
-DROP TRIGGER IF EXISTS triggerAfterInsertgGroup ON groups;
 
 CREATE TRIGGER triggerAfterInsertgGroup
   AFTER INSERT ON groups

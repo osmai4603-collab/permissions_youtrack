@@ -1,0 +1,2 @@
+DROP TABLE IF EXISTS assigned_roles CASCADE;
+DROP TYPE IF EXISTS access_scope_type CASCADE;
