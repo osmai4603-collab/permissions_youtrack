@@ -604,3 +604,11 @@ graph TD
 | **`Enforcer` (نقطة الإنفاذ - PEP)** | **Adapters (Middlewares) + Use Cases** | حراسة المداخل السريعة (Edge) وحماية حالات الاستخدام (Use Case Guards). |
 | **`SessionManager` & JIT** | **Application Services** | إدارة سياق الجلسات والتفعيل المؤقت للأدوار مع فحص DSD. |
 | **`RoleRepository`** | **Infrastructure Layer** | التخزين الدائم للأدوار في قاعدة البيانات وتنفيذ واجهة الـ Port. |
+
+---
+
+### 🚀 نموذج عملي حي متكامل في الكود
+
+تم تطبيق المعمارية النظيفة بالكامل في مشروع توضيحي متكامل داخل المستودع:
+📁 [examples/clean_architecture](file:///home/osm/StudioProjects/permissions_youtrack/examples/clean_architecture/README.md)
+يحتوي على الطبقات الأربع واختبارات تكامل شاملة مع فحص الوراثة، الملكية الملازمة (Inherent Ownership)، وتصعيد الصلاحيات اللحظي (JIT).
