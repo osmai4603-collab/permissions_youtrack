@@ -93,6 +93,131 @@ func TestResolveImplied(t *testing.T) {
 	}
 }
 
+func TestResolveDependent(t *testing.T) {
+	svc := NewService()
+
+	tests := []struct {
+		name     string
+		input    []PermKey
+		expected []PermKey
+	}{
+		{
+			name:     "Read Project Full is depended upon by Update Project and Delete Project",
+			input:    []PermKey{PermReadProjectFull},
+			expected: []PermKey{PermDeleteProject, PermReadProjectFull, PermUpdateProject},
+		},
+		{
+			name:     "Read User Details is depended upon by Update User and Delete User",
+			input:    []PermKey{PermReadUserDetails},
+			expected: []PermKey{PermDeleteUser, PermReadUserDetails, PermUpdateUser},
+		},
+		{
+			name:     "Read Article is depended upon by Create, Delete, and Update Article",
+			input:    []PermKey{PermReadArticle},
+			expected: []PermKey{PermCreateArticle, PermDeleteArticle, PermReadArticle, PermUpdateArticle},
+		},
+		{
+			name:     "Read Article Comment is depended upon by Create, Delete, and Update Article Comment",
+			input:    []PermKey{PermReadArticleComment},
+			expected: []PermKey{PermCreateArticleComment, PermDeleteArticleComment, PermReadArticleComment, PermUpdateArticleComment},
+		},
+		{
+			name:     "Leaf permission has only itself as dependent",
+			input:    []PermKey{PermDeleteArticle},
+			expected: []PermKey{PermDeleteArticle},
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			res := svc.ResolveDependent(tc.input)
+			if len(res) != len(tc.expected) {
+				t.Fatalf("expected %v, got %v", tc.expected, res)
+			}
+			for i, exp := range tc.expected {
+				if res[i] != exp {
+					t.Errorf("at index %d: expected %s, got %s", i, exp, res[i])
+				}
+			}
+		})
+	}
+}
+
+func TestGetDependentAndImpliedPermissions(t *testing.T) {
+	svc := NewService()
+
+	// Direct Dependent
+	depReadProj := svc.GetDependentPermissions(PermReadProjectFull)
+	expectedDep := []PermKey{PermDeleteProject, PermUpdateProject}
+	if len(depReadProj) != len(expectedDep) {
+		t.Fatalf("expected %v, got %v", expectedDep, depReadProj)
+	}
+	for i, exp := range expectedDep {
+		if depReadProj[i] != exp {
+			t.Errorf("expected %s, got %s", exp, depReadProj[i])
+		}
+	}
+
+	// Leaf has empty dependent perms
+	if len(svc.GetDependentPermissions(PermDeleteArticle)) != 0 {
+		t.Errorf("expected empty dependent perms for leaf node")
+	}
+
+	// Unknown permission returns nil
+	if svc.GetDependentPermissions("NON_EXISTENT") != nil {
+		t.Errorf("expected nil for non-existent permission")
+	}
+
+	// Direct Implied
+	impCreateIssue := svc.GetImpliedPermissions(PermCreateIssue)
+	if len(impCreateIssue) != 1 || impCreateIssue[0] != PermReadProjectBasic {
+		t.Errorf("expected [READ_PROJECT_BASIC], got %v", impCreateIssue)
+	}
+
+	// Root has empty implied perms
+	if len(svc.GetImpliedPermissions(PermReadProjectBasic)) != 0 {
+		t.Errorf("expected empty implied perms for root node")
+	}
+
+	// Unknown permission returns nil
+	if svc.GetImpliedPermissions("NON_EXISTENT") != nil {
+		t.Errorf("expected nil for non-existent permission")
+	}
+}
+
+func TestDependsOn(t *testing.T) {
+	svc := NewService()
+
+	// Direct dependency
+	if !svc.DependsOn(PermUpdateProject, PermReadProjectFull) {
+		t.Errorf("UpdateProject should depend on ReadProjectFull")
+	}
+
+	// Transitive dependency
+	if !svc.DependsOn(PermUpdateProject, PermReadProjectBasic) {
+		t.Errorf("UpdateProject should transitively depend on ReadProjectBasic")
+	}
+
+	if !svc.DependsOn(PermUpdateUser, PermReadUserBasic) {
+		t.Errorf("UpdateUser should transitively depend on ReadUserBasic")
+	}
+
+	// Reverse should be false
+	if svc.DependsOn(PermReadProjectBasic, PermUpdateProject) {
+		t.Errorf("ReadProjectBasic should not depend on UpdateProject")
+	}
+
+	// Self dependency should be false
+	if svc.DependsOn(PermUpdateProject, PermUpdateProject) {
+		t.Errorf("Permission should not depend on itself")
+	}
+
+	// Unrelated permissions
+	if svc.DependsOn(PermCreateIssue, PermReadArticle) {
+		t.Errorf("CreateIssue should not depend on ReadArticle")
+	}
+}
+
 func TestResolveRevocation(t *testing.T) {
 	svc := NewService()
 

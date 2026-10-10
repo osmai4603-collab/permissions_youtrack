@@ -9,6 +9,10 @@ type IPermissionService interface {
 	GetPermissionsByScope(scope ScopeLevel) []Permission
 	GetPermissionsByEntity(entity EntityType) []Permission
 	ResolveImplied(permissionIDs []PermKey) []PermKey
+	ResolveDependent(permissionIDs []PermKey) []PermKey
+	GetImpliedPermissions(id PermKey) []PermKey
+	GetDependentPermissions(id PermKey) []PermKey
+	DependsOn(perm PermKey, target PermKey) bool
 	ResolveRevocation(activePermissionIDs []PermKey, permissionToRemove PermKey) []PermKey
 	ValidatePermissionsForScope(permissionIDs []PermKey, targetScope ScopeLevel) []PermKey
 	HasPermission(grantedPermissions []PermKey, requiredPermission PermKey) bool
@@ -80,7 +84,10 @@ func (s *service) ResolveImplied(permissionIDs []PermKey) []PermKey {
 	for _, id := range permissionIDs {
 		perm := s.GetPermission(id)
 		if perm != nil {
-			queue = append(queue, perm.ID)
+			if _, seen := resultMap[perm.ID]; !seen {
+				resultMap[perm.ID] = struct{}{}
+				queue = append(queue, perm.ID)
+			}
 		}
 	}
 
@@ -89,6 +96,9 @@ func (s *service) ResolveImplied(permissionIDs []PermKey) []PermKey {
 		queue = queue[1:]
 
 		p := s.GetPermission(currentID)
+		if p == nil {
+			continue
+		}
 		for _, impliedID := range p.ImpliedPerms {
 			if _, seen := resultMap[impliedID]; !seen {
 				resultMap[impliedID] = struct{}{}
@@ -101,7 +111,83 @@ func (s *service) ResolveImplied(permissionIDs []PermKey) []PermKey {
 	for id := range resultMap {
 		out = append(out, id)
 	}
+	slices.Sort(out)
 	return out
+}
+
+// ResolveDependent computes the transitive closure of dependent permissions.
+// As defined by YouTrack: when evaluating permissions that rely on a set of target permissions,
+// any permission whose operation technically depends on them is included transitively.
+func (s *service) ResolveDependent(permissionIDs []PermKey) []PermKey {
+
+	resultMap := make(map[PermKey]struct{})
+	var queue []PermKey
+
+	for _, id := range permissionIDs {
+		perm := s.GetPermission(id)
+		if perm != nil {
+			if _, seen := resultMap[perm.ID]; !seen {
+				resultMap[perm.ID] = struct{}{}
+				queue = append(queue, perm.ID)
+			}
+		}
+	}
+
+	for len(queue) > 0 {
+		currentID := queue[0]
+		queue = queue[1:]
+
+		p := s.GetPermission(currentID)
+		if p == nil {
+			continue
+		}
+		for _, depID := range p.DependentPerms {
+			if _, seen := resultMap[depID]; !seen {
+				resultMap[depID] = struct{}{}
+				queue = append(queue, depID)
+			}
+		}
+	}
+
+	out := make([]PermKey, 0, len(resultMap))
+	for id := range resultMap {
+		out = append(out, id)
+	}
+	slices.Sort(out)
+	return out
+}
+
+// GetDependentPermissions returns the direct dependent permissions for a given permission.
+func (s *service) GetDependentPermissions(id PermKey) []PermKey {
+	p := s.GetPermission(id)
+	if p == nil {
+		return nil
+	}
+	out := make([]PermKey, len(p.DependentPerms))
+	copy(out, p.DependentPerms)
+	slices.Sort(out)
+	return out
+}
+
+// GetImpliedPermissions returns the direct implied permissions for a given permission.
+func (s *service) GetImpliedPermissions(id PermKey) []PermKey {
+	p := s.GetPermission(id)
+	if p == nil {
+		return nil
+	}
+	out := make([]PermKey, len(p.ImpliedPerms))
+	copy(out, p.ImpliedPerms)
+	slices.Sort(out)
+	return out
+}
+
+// DependsOn checks whether perm depends directly or transitively on target.
+func (s *service) DependsOn(perm PermKey, target PermKey) bool {
+	if perm == target {
+		return false
+	}
+	dependents := s.ResolveDependent([]PermKey{target})
+	return slices.Contains(dependents, perm)
 }
 
 // ResolveRevocation determines which permissions remain after revoking a target permission.
@@ -141,6 +227,7 @@ func (s *service) ResolveRevocation(activePermissionIDs []PermKey, permissionToR
 			remaining = append(remaining, id)
 		}
 	}
+	slices.Sort(remaining)
 	return remaining
 }
 

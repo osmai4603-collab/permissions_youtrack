@@ -371,6 +371,12 @@ func TestConcurrentAccessAndThreadSafety(t *testing.T) {
 					t.Errorf("worker %d: implied resolution produced empty set for %s", workerID, targetID)
 				}
 
+				// Concurrent Dependent Resolution
+				dependent := svc.ResolveDependent([]PermKey{targetID})
+				if len(dependent) == 0 {
+					t.Errorf("worker %d: dependent resolution produced empty set for %s", workerID, targetID)
+				}
+
 				// Concurrent Revocation Resolution
 				remaining := svc.ResolveRevocation(implied, targetID)
 				for _, rem := range remaining {
@@ -405,6 +411,15 @@ func BenchmarkResolveImplied(b *testing.B) {
 
 	for b.Loop() {
 		_ = svc.ResolveImplied(input)
+	}
+}
+
+func BenchmarkResolveDependent(b *testing.B) {
+	svc := NewService()
+	input := []PermKey{PermReadProjectBasic, PermReadUserDetails, PermReadArticle}
+
+	for b.Loop() {
+		_ = svc.ResolveDependent(input)
 	}
 }
 
